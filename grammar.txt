@@ -1,0 +1,53 @@
+```
+import struct
+```
+
+vec(element) =>
+    let length = u32 in
+    element{length}
+
+name = vec(char) |> `lambda bytes: b''.join(bytes).decode('utf8')`
+char = b/[\x00-\xFF]/
+
+byte = b/[\x00-\xFF]/ |> `ord`
+
+u32 = UnsignedInt
+i32 = SignedInt
+i64 = SignedInt
+f32 = b/[\x00-\xFF]{4}/ |> `lambda x: struct.unpack('<f', x)[0]`
+f64 = b/[\x00-\xFF]{8}/ |> `lambda x: struct.unpack('<d', x)[0]`
+
+SignedInt = LEB128 |> `decode_signed_int`
+UnsignedInt = LEB128 |> `decode_unsigned_int`
+
+LEB128 = b/[\x80-\xFF]*[\x00-\x7F]/
+
+```
+continue_flag = 1 << 7
+
+def decode_signed_int(bytes):
+    mask = 0xFF >> 1
+    result = 0
+    shift = 0
+
+    for b in bytes:
+        result |= (b & mask) << shift
+        shift += 7
+
+    sign = 1 << 6
+    if b & sign:
+        result |= (~0 << shift)
+
+    return result
+
+def decode_unsigned_int(bytes):
+    mask = 0xFF >> 1
+    result = 0
+    shift = 0
+
+    for b in bytes:
+        result |= (b & mask) << shift
+        shift += 7
+
+    return result
+```
