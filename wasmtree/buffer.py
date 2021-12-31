@@ -19,10 +19,10 @@ class Buffer:
         self._buffer.write(value)
         return self
 
-    def write_custom_section(self, name, body):
+    def write_custom_section(self, custom_section):
         stage = Buffer()
-        stage.write_name(name)
-        stage.write_bytes(body)
+        stage.write_name(custom_section.name)
+        stage.write_bytes(custom_section.body)
         return self._write_staged_section(0x00, stage)
 
     def write_i32(self, value):

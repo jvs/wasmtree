@@ -3,16 +3,16 @@ from wasmtree import parser
 
 
 def test_custom_section():
-    doc = Buffer().write_custom_section('test', b'\x12\x34\x56').getvalue()
-    assert len(doc) == 10
-    received = parser.CustomSection.parse(doc)
-
-    assert received == parser.CustomSection(
-        id=0x00,
-        size=8,
+    expected = parser.CustomSection(
         name='test',
         body=b'\x12\x34\x56',
     )
+
+    doc = Buffer().write_custom_section(expected).getvalue()
+    assert doc == b'\x00\x08\x04test\x12\x34\x56'
+
+    received = parser.CustomSection.parse(doc)
+    assert received == expected
 
 
 def test_type_section():

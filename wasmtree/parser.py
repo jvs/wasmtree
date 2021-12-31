@@ -6,33 +6,105 @@ import struct
 ```
 
 class Module {
-    magic: b'\\x00\\x61\\x73\\x6D'
-    version: b'\\x01\\x00\\x00\\x00'
+    let magic: b'\\x00\\x61\\x73\\x6D'
+    let version: b'\\x01\\x00\\x00\\x00'
+
     custom1: CustomSection*
-    typesec: TypeSection?
+
+    type_section: TypeSection?
     custom2: CustomSection*
+
+    import_section: ImportSection?
+    custom3: CustomSection*
 }
 
 
 # Sections.
 class CustomSection {
-    id: 0x00
-    size: u32
-    name: let loc = LocatedName in `loc.name`
-    body: ByteString(`size - (loc.end - loc.start)`)
+    let id: 0x00
+    let size: u32
+    let loc: LocatedName
+    let remaining = `size - (loc.end - loc.start)`
+
+    name: `loc.name`
+    body: ByteString(remaining)
 }
 
 class TypeSection {
-    id: 0x01
-    size: u32
+    let id: 0x01
+    let size: u32
     func_types: vec(FuncType)
+}
+
+class ImportSection {
+    let id: 0x02
+    imports: vec(Import)
+}
+
+
+# Imports.
+class Import {
+    module: Name
+    name: Name
+    descriptor: ImportDescriptor
+}
+
+ImportDescriptor = ImportFunc | ImportTable | ImportMemory | ImportGlobal
+
+class ImportFunc {
+    let id: 0x00
+    type_index: u32
+}
+
+class ImportTable {
+    let id: 0x01
+    table_type: TableType
+}
+
+class ImportMemory {
+    let id: 0x02
+    limits: Limits
+}
+
+class ImportGlobal {
+    let id: 0x03
+    type: GlobalType
+}
+
+
+# Tables.
+class TableType {
+    elements: ReferenceType
+    limits: Limits
+}
+
+
+# Limits.
+Limits = MinLimit | MinMaxLimits
+
+class MinLimit {
+    let id: 0x00
+    min: u32
+    max: `None`
+}
+
+class MinMaxLimits {
+    let id: 0x01
+    min: u32
+    max: u32
 }
 
 
 # Types.
 class FuncType {
-    params: 0x60 >> vec(ValueType)
+    let id: 0x60
+    params: vec(ValueType)
     results: vec(ValueType)
+}
+
+class GlobalType {
+    type: ValueType
+    modifier: 0x00 >> `'const'` | 0x01 >> `'var'`
 }
 
 ValueType = NumberType | ReferenceType
@@ -521,25 +593,27 @@ matcher4 = _compile_re(b'[\\x80-\\xFF]*[\\x00-\\x7F]', flags=0).match
 class Module(Node):
     """
     class Module {
-        magic: b'\\x00asm'
-        version: b'\\x01\\x00\\x00\\x00'
+        let magic: b'\\x00asm'
+        let version: b'\\x01\\x00\\x00\\x00'
         custom1: CustomSection*
-        typesec: Opt(TypeSection)
+        type_section: Opt(TypeSection)
         custom2: CustomSection*
+        import_section: Opt(ImportSection)
+        custom3: CustomSection*
     }
     """
-    _fields = ('magic', 'version', 'custom1', 'typesec', 'custom2')
+    _fields = ('custom1', 'type_section', 'custom2', 'import_section', 'custom3')
 
-    def __init__(self, magic, version, custom1, typesec, custom2):
+    def __init__(self, custom1, type_section, custom2, import_section, custom3):
         Node.__init__(self)
-        self.magic = magic
-        self.version = version
         self.custom1 = custom1
-        self.typesec = typesec
+        self.type_section = type_section
         self.custom2 = custom2
+        self.import_section = import_section
+        self.custom3 = custom3
 
     def __repr__(self):
-        return f'Module(magic={self.magic!r}, version={self.version!r}, custom1={self.custom1!r}, typesec={self.typesec!r}, custom2={self.custom2!r})'
+        return f'Module(custom1={self.custom1!r}, type_section={self.type_section!r}, custom2={self.custom2!r}, import_section={self.import_section!r}, custom3={self.custom3!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -605,7 +679,7 @@ def _try_Module(_text, _pos):
             _result = None
             _status = True
         # End Opt
-        typesec = _result
+        type_section = _result
         # Begin List
         # CustomSection*
         staging2 = []
@@ -622,7 +696,35 @@ def _try_Module(_text, _pos):
         _status = True
         # End List
         custom2 = _result
-        _result = Module(magic, version, custom1, typesec, custom2)
+        # Begin Opt
+        # Opt(ImportSection)
+        backtrack2 = _pos
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ImportSection, _pos))
+        # End Ref
+        if not (_status):
+            _pos = backtrack2
+            _result = None
+            _status = True
+        # End Opt
+        import_section = _result
+        # Begin List
+        # CustomSection*
+        staging3 = []
+        while True:
+            checkpoint3 = _pos
+            # Begin Ref
+            (_status, _result, _pos) = (yield (3, _try_CustomSection, _pos))
+            # End Ref
+            if not (_status):
+                _pos = checkpoint3
+                break
+            staging3.append(_result)
+        _result = staging3
+        _status = True
+        # End List
+        custom3 = _result
+        _result = Module(custom1, type_section, custom2, import_section, custom3)
         _result._metadata.position_info = (start_pos1, _pos)
         break
     # End Seq
@@ -663,24 +765,23 @@ def _raise_error6(_text, _pos):
 class CustomSection(Node):
     """
     class CustomSection {
-        id: 0x0
-        size: u32
-        name: let loc = LocatedName in
-    `loc.name`
-        body: ByteString(`size - (loc.end - loc.start)`)
+        let id: 0x0
+        let size: u32
+        let loc: LocatedName
+        let remaining: `size - (loc.end - loc.start)`
+        name: `loc.name`
+        body: ByteString(remaining)
     }
     """
-    _fields = ('id', 'size', 'name', 'body')
+    _fields = ('name', 'body')
 
-    def __init__(self, id, size, name, body):
+    def __init__(self, name, body):
         Node.__init__(self)
-        self.id = id
-        self.size = size
         self.name = name
         self.body = body
 
     def __repr__(self):
-        return f'CustomSection(id={self.id!r}, size={self.size!r}, name={self.name!r}, body={self.body!r})'
+        return f'CustomSection(name={self.name!r}, body={self.body!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -698,7 +799,7 @@ def _try_CustomSection(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error19
+            _result = _raise_error25
             _status = False
         # End Byte
         if not (_status):
@@ -710,35 +811,33 @@ def _try_CustomSection(_text, _pos):
         if not (_status):
             break
         size = _result
-        # Begin Let
-        # let loc = LocatedName in
-        # `loc.name`
         # Begin Ref
         (_status, _result, _pos) = (yield (3, _try_LocatedName, _pos))
         # End Ref
-        if _status:
-            loc = _result
-            _result = loc.name
-            _status = True
-        # End Let
         if not (_status):
             break
+        loc = _result
+        _result = size - (loc.end - loc.start)
+        _status = True
+        remaining = _result
+        _result = loc.name
+        _status = True
         name = _result
         # Begin Call
-        # ByteString(`size - (loc.end - loc.start)`)
-        func1 = _ParseFunction(_try_ByteString, (size - (loc.end - loc.start),), ())
+        # ByteString(remaining)
+        func1 = _ParseFunction(_try_ByteString, (remaining,), ())
         (_status, _result, _pos) = (yield (3, func1, _pos))
         # End Call
         if not (_status):
             break
         body = _result
-        _result = CustomSection(id, size, name, body)
+        _result = CustomSection(name, body)
         _result._metadata.position_info = (start_pos2, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error19(_text, _pos):
+def _raise_error25(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -757,21 +856,19 @@ def _raise_error19(_text, _pos):
 class TypeSection(Node):
     """
     class TypeSection {
-        id: 0x1
-        size: u32
+        let id: 0x1
+        let size: u32
         func_types: vec(FuncType)
     }
     """
-    _fields = ('id', 'size', 'func_types')
+    _fields = ('func_types',)
 
-    def __init__(self, id, size, func_types):
+    def __init__(self, func_types):
         Node.__init__(self)
-        self.id = id
-        self.size = size
         self.func_types = func_types
 
     def __repr__(self):
-        return f'TypeSection(id={self.id!r}, size={self.size!r}, func_types={self.func_types!r})'
+        return f'TypeSection(func_types={self.func_types!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -789,7 +886,7 @@ def _try_TypeSection(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error33
+            _result = _raise_error41
             _status = False
         # End Byte
         if not (_status):
@@ -809,13 +906,13 @@ def _try_TypeSection(_text, _pos):
         if not (_status):
             break
         func_types = _result
-        _result = TypeSection(id, size, func_types)
+        _result = TypeSection(func_types)
         _result._metadata.position_info = (start_pos3, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error33(_text, _pos):
+def _raise_error41(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -831,10 +928,710 @@ def _raise_error33(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
+class ImportSection(Node):
+    """
+    class ImportSection {
+        let id: 0x2
+        imports: vec(Import)
+    }
+    """
+    _fields = ('imports',)
+
+    def __init__(self, imports):
+        Node.__init__(self)
+        self.imports = imports
+
+    def __repr__(self):
+        return f'ImportSection(imports={self.imports!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_ImportSection, fullparse)
+
+
+def _try_ImportSection(_text, _pos):
+    # Begin Seq
+    start_pos4 = _pos
+    while True:
+        # Begin Byte
+        # 0x2
+        if (_pos < len(_text)) and (_text[_pos] == 2):
+            _result = 2
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error51
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Call
+        # vec(Import)
+        func3 = _ParseFunction(_try_vec, (_try_Import,), ())
+        (_status, _result, _pos) = (yield (3, func3, _pos))
+        # End Call
+        if not (_status):
+            break
+        imports = _result
+        _result = ImportSection(imports)
+        _result._metadata.position_info = (start_pos4, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error51(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ImportSection' rule, at the expression:\n"
+    '    0x2\n\n'
+    'Expected to match the byte value 0x2'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class Import(Node):
+    """
+    class Import {
+        module: Name
+        name: Name
+        descriptor: ImportDescriptor
+    }
+    """
+    _fields = ('module', 'name', 'descriptor')
+
+    def __init__(self, module, name, descriptor):
+        Node.__init__(self)
+        self.module = module
+        self.name = name
+        self.descriptor = descriptor
+
+    def __repr__(self):
+        return f'Import(module={self.module!r}, name={self.name!r}, descriptor={self.descriptor!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_Import, fullparse)
+
+
+def _try_Import(_text, _pos):
+    # Begin Seq
+    start_pos5 = _pos
+    while True:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_Name, _pos))
+        # End Ref
+        if not (_status):
+            break
+        module = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_Name, _pos))
+        # End Ref
+        if not (_status):
+            break
+        name = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ImportDescriptor, _pos))
+        # End Ref
+        if not (_status):
+            break
+        descriptor = _result
+        _result = Import(module, name, descriptor)
+        _result._metadata.position_info = (start_pos5, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _try_ImportDescriptor(_text, _pos):
+    # Rule 'ImportDescriptor'
+    # Begin Choice
+    farthest_err1 = _raise_error65
+    backtrack3 = farthest_pos1 = _pos
+    while True:
+        # Option 1:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ImportFunc, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos1 < _pos):
+            farthest_pos1 = _pos
+            farthest_err1 = _result
+        _pos = backtrack3
+        # Option 2:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ImportTable, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos1 < _pos):
+            farthest_pos1 = _pos
+            farthest_err1 = _result
+        _pos = backtrack3
+        # Option 3:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ImportMemory, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos1 < _pos):
+            farthest_pos1 = _pos
+            farthest_err1 = _result
+        _pos = backtrack3
+        # Option 4:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ImportGlobal, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos1 < _pos):
+            farthest_pos1 = _pos
+            farthest_err1 = _result
+        _pos = farthest_pos1
+        _result = farthest_err1
+        break
+    # End Choice
+    yield (_status, _result, _pos)
+
+def _parse_ImportDescriptor(text, pos=0, fullparse=True):
+    return _run(text, pos, _try_ImportDescriptor, fullparse)
+
+ImportDescriptor = Rule('ImportDescriptor', _parse_ImportDescriptor, """
+    ImportDescriptor = ImportFunc | ImportTable | ImportMemory | ImportGlobal
+""")
+def _raise_error65(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ImportDescriptor' rule, at the expression:\n"
+    '    ImportFunc | ImportTable | ImportMemory | ImportGlobal\n\n'
+    'Unexpected input'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class ImportFunc(Node):
+    """
+    class ImportFunc {
+        let id: 0x0
+        type_index: u32
+    }
+    """
+    _fields = ('type_index',)
+
+    def __init__(self, type_index):
+        Node.__init__(self)
+        self.type_index = type_index
+
+    def __repr__(self):
+        return f'ImportFunc(type_index={self.type_index!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_ImportFunc, fullparse)
+
+
+def _try_ImportFunc(_text, _pos):
+    # Begin Seq
+    start_pos6 = _pos
+    while True:
+        # Begin Byte
+        # 0x0
+        if (_pos < len(_text)) and (_text[_pos] == 0):
+            _result = 0
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error73
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_u32, _pos))
+        # End Ref
+        if not (_status):
+            break
+        type_index = _result
+        _result = ImportFunc(type_index)
+        _result._metadata.position_info = (start_pos6, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error73(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ImportFunc' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class ImportTable(Node):
+    """
+    class ImportTable {
+        let id: 0x1
+        table_type: TableType
+    }
+    """
+    _fields = ('table_type',)
+
+    def __init__(self, table_type):
+        Node.__init__(self)
+        self.table_type = table_type
+
+    def __repr__(self):
+        return f'ImportTable(table_type={self.table_type!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_ImportTable, fullparse)
+
+
+def _try_ImportTable(_text, _pos):
+    # Begin Seq
+    start_pos7 = _pos
+    while True:
+        # Begin Byte
+        # 0x1
+        if (_pos < len(_text)) and (_text[_pos] == 1):
+            _result = 1
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error79
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_TableType, _pos))
+        # End Ref
+        if not (_status):
+            break
+        table_type = _result
+        _result = ImportTable(table_type)
+        _result._metadata.position_info = (start_pos7, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error79(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ImportTable' rule, at the expression:\n"
+    '    0x1\n\n'
+    'Expected to match the byte value 0x1'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class ImportMemory(Node):
+    """
+    class ImportMemory {
+        let id: 0x2
+        limits: Limits
+    }
+    """
+    _fields = ('limits',)
+
+    def __init__(self, limits):
+        Node.__init__(self)
+        self.limits = limits
+
+    def __repr__(self):
+        return f'ImportMemory(limits={self.limits!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_ImportMemory, fullparse)
+
+
+def _try_ImportMemory(_text, _pos):
+    # Begin Seq
+    start_pos8 = _pos
+    while True:
+        # Begin Byte
+        # 0x2
+        if (_pos < len(_text)) and (_text[_pos] == 2):
+            _result = 2
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error85
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_Limits, _pos))
+        # End Ref
+        if not (_status):
+            break
+        limits = _result
+        _result = ImportMemory(limits)
+        _result._metadata.position_info = (start_pos8, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error85(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ImportMemory' rule, at the expression:\n"
+    '    0x2\n\n'
+    'Expected to match the byte value 0x2'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class ImportGlobal(Node):
+    """
+    class ImportGlobal {
+        let id: 0x3
+        type: GlobalType
+    }
+    """
+    _fields = ('type',)
+
+    def __init__(self, type):
+        Node.__init__(self)
+        self.type = type
+
+    def __repr__(self):
+        return f'ImportGlobal(type={self.type!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_ImportGlobal, fullparse)
+
+
+def _try_ImportGlobal(_text, _pos):
+    # Begin Seq
+    start_pos9 = _pos
+    while True:
+        # Begin Byte
+        # 0x3
+        if (_pos < len(_text)) and (_text[_pos] == 3):
+            _result = 3
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error91
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_GlobalType, _pos))
+        # End Ref
+        if not (_status):
+            break
+        type = _result
+        _result = ImportGlobal(type)
+        _result._metadata.position_info = (start_pos9, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error91(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ImportGlobal' rule, at the expression:\n"
+    '    0x3\n\n'
+    'Expected to match the byte value 0x3'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class TableType(Node):
+    """
+    class TableType {
+        elements: ReferenceType
+        limits: Limits
+    }
+    """
+    _fields = ('elements', 'limits')
+
+    def __init__(self, elements, limits):
+        Node.__init__(self)
+        self.elements = elements
+        self.limits = limits
+
+    def __repr__(self):
+        return f'TableType(elements={self.elements!r}, limits={self.limits!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_TableType, fullparse)
+
+
+def _try_TableType(_text, _pos):
+    # Begin Seq
+    start_pos10 = _pos
+    while True:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ReferenceType, _pos))
+        # End Ref
+        if not (_status):
+            break
+        elements = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_Limits, _pos))
+        # End Ref
+        if not (_status):
+            break
+        limits = _result
+        _result = TableType(elements, limits)
+        _result._metadata.position_info = (start_pos10, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _try_Limits(_text, _pos):
+    # Rule 'Limits'
+    # Begin Choice
+    farthest_err2 = _raise_error101
+    backtrack4 = farthest_pos2 = _pos
+    while True:
+        # Option 1:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_MinLimit, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos2 < _pos):
+            farthest_pos2 = _pos
+            farthest_err2 = _result
+        _pos = backtrack4
+        # Option 2:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_MinMaxLimits, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos2 < _pos):
+            farthest_pos2 = _pos
+            farthest_err2 = _result
+        _pos = farthest_pos2
+        _result = farthest_err2
+        break
+    # End Choice
+    yield (_status, _result, _pos)
+
+def _parse_Limits(text, pos=0, fullparse=True):
+    return _run(text, pos, _try_Limits, fullparse)
+
+Limits = Rule('Limits', _parse_Limits, """
+    Limits = MinLimit | MinMaxLimits
+""")
+def _raise_error101(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'Limits' rule, at the expression:\n"
+    '    MinLimit | MinMaxLimits\n\n'
+    'Unexpected input'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class MinLimit(Node):
+    """
+    class MinLimit {
+        let id: 0x0
+        min: u32
+        max: `None`
+    }
+    """
+    _fields = ('min', 'max')
+
+    def __init__(self, min, max):
+        Node.__init__(self)
+        self.min = min
+        self.max = max
+
+    def __repr__(self):
+        return f'MinLimit(min={self.min!r}, max={self.max!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_MinLimit, fullparse)
+
+
+def _try_MinLimit(_text, _pos):
+    # Begin Seq
+    start_pos11 = _pos
+    while True:
+        # Begin Byte
+        # 0x0
+        if (_pos < len(_text)) and (_text[_pos] == 0):
+            _result = 0
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error107
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_u32, _pos))
+        # End Ref
+        if not (_status):
+            break
+        min = _result
+        _result = None
+        _status = True
+        max = _result
+        _result = MinLimit(min, max)
+        _result._metadata.position_info = (start_pos11, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error107(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'MinLimit' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class MinMaxLimits(Node):
+    """
+    class MinMaxLimits {
+        let id: 0x1
+        min: u32
+        max: u32
+    }
+    """
+    _fields = ('min', 'max')
+
+    def __init__(self, min, max):
+        Node.__init__(self)
+        self.min = min
+        self.max = max
+
+    def __repr__(self):
+        return f'MinMaxLimits(min={self.min!r}, max={self.max!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_MinMaxLimits, fullparse)
+
+
+def _try_MinMaxLimits(_text, _pos):
+    # Begin Seq
+    start_pos12 = _pos
+    while True:
+        # Begin Byte
+        # 0x1
+        if (_pos < len(_text)) and (_text[_pos] == 1):
+            _result = 1
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error115
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_u32, _pos))
+        # End Ref
+        if not (_status):
+            break
+        min = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_u32, _pos))
+        # End Ref
+        if not (_status):
+            break
+        max = _result
+        _result = MinMaxLimits(min, max)
+        _result._metadata.position_info = (start_pos12, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error115(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'MinMaxLimits' rule, at the expression:\n"
+    '    0x1\n\n'
+    'Expected to match the byte value 0x1'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
 class FuncType(Node):
     """
     class FuncType {
-        params: 0x60 >> vec(ValueType)
+        let id: 0x60
+        params: vec(ValueType)
         results: vec(ValueType)
     }
     """
@@ -855,33 +1652,21 @@ class FuncType(Node):
 
 def _try_FuncType(_text, _pos):
     # Begin Seq
-    start_pos4 = _pos
+    start_pos13 = _pos
     while True:
-        # Begin Discard
-        # 0x60 >> vec(ValueType)
-        while True:
-            # Begin Byte
-            # 0x60
-            if (_pos < len(_text)) and (_text[_pos] == 96):
-                _result = 96
-                _pos = (_pos + 1)
-                _status = True
-            else:
-                _result = _raise_error44
-                _status = False
-            # End Byte
-            if not (_status):
-                break
-            # Begin Call
-            # vec(ValueType)
-            func3 = _ParseFunction(_try_vec, (_try_ValueType,), ())
-            (_status, _result, _pos) = (yield (3, func3, _pos))
-            # End Call
-            break
-        # End Discard
+        # Begin Byte
+        # 0x60
+        if (_pos < len(_text)) and (_text[_pos] == 96):
+            _result = 96
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error123
+            _status = False
+        # End Byte
         if not (_status):
             break
-        params = _result
+        id = _result
         # Begin Call
         # vec(ValueType)
         func4 = _ParseFunction(_try_vec, (_try_ValueType,), ())
@@ -889,14 +1674,22 @@ def _try_FuncType(_text, _pos):
         # End Call
         if not (_status):
             break
+        params = _result
+        # Begin Call
+        # vec(ValueType)
+        func5 = _ParseFunction(_try_vec, (_try_ValueType,), ())
+        (_status, _result, _pos) = (yield (3, func5, _pos))
+        # End Call
+        if not (_status):
+            break
         results = _result
         _result = FuncType(params, results)
-        _result._metadata.position_info = (start_pos4, _pos)
+        _result._metadata.position_info = (start_pos13, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error44(_text, _pos):
+def _raise_error123(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -912,11 +1705,159 @@ def _raise_error44(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
+class GlobalType(Node):
+    """
+    class GlobalType {
+        type: ValueType
+        modifier: 0x0 >> `'const'` | 0x1 >> `'var'`
+    }
+    """
+    _fields = ('type', 'modifier')
+
+    def __init__(self, type, modifier):
+        Node.__init__(self)
+        self.type = type
+        self.modifier = modifier
+
+    def __repr__(self):
+        return f'GlobalType(type={self.type!r}, modifier={self.modifier!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_GlobalType, fullparse)
+
+
+def _try_GlobalType(_text, _pos):
+    # Begin Seq
+    start_pos14 = _pos
+    while True:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ValueType, _pos))
+        # End Ref
+        if not (_status):
+            break
+        type = _result
+        # Begin Choice
+        farthest_err3 = _raise_error137
+        backtrack5 = farthest_pos3 = _pos
+        while True:
+            # Option 1:
+            # Begin Discard
+            # 0x0 >> `'const'`
+            while True:
+                # Begin Byte
+                # 0x0
+                if (_pos < len(_text)) and (_text[_pos] == 0):
+                    _result = 0
+                    _pos = (_pos + 1)
+                    _status = True
+                else:
+                    _result = _raise_error139
+                    _status = False
+                # End Byte
+                if not (_status):
+                    break
+                _result = 'const'
+                _status = True
+                break
+            # End Discard
+            if _status:
+                break
+            if (farthest_pos3 < _pos):
+                farthest_pos3 = _pos
+                farthest_err3 = _result
+            _pos = backtrack5
+            # Option 2:
+            # Begin Discard
+            # 0x1 >> `'var'`
+            while True:
+                # Begin Byte
+                # 0x1
+                if (_pos < len(_text)) and (_text[_pos] == 1):
+                    _result = 1
+                    _pos = (_pos + 1)
+                    _status = True
+                else:
+                    _result = _raise_error142
+                    _status = False
+                # End Byte
+                if not (_status):
+                    break
+                _result = 'var'
+                _status = True
+                break
+            # End Discard
+            if _status:
+                break
+            if (farthest_pos3 < _pos):
+                farthest_pos3 = _pos
+                farthest_err3 = _result
+            _pos = farthest_pos3
+            _result = farthest_err3
+            break
+        # End Choice
+        if not (_status):
+            break
+        modifier = _result
+        _result = GlobalType(type, modifier)
+        _result._metadata.position_info = (start_pos14, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error137(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'GlobalType' rule, at the expression:\n"
+    "    0x0 >> `'const'` | 0x1 >> `'var'`\n\n"
+    'Unexpected input'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error139(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'GlobalType' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error142(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'GlobalType' rule, at the expression:\n"
+    '    0x1\n\n'
+    'Expected to match the byte value 0x1'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
 def _try_ValueType(_text, _pos):
     # Rule 'ValueType'
     # Begin Choice
-    farthest_err1 = _raise_error53
-    backtrack2 = farthest_pos1 = _pos
+    farthest_err4 = _raise_error145
+    backtrack6 = farthest_pos4 = _pos
     while True:
         # Option 1:
         # Begin Ref
@@ -924,21 +1865,21 @@ def _try_ValueType(_text, _pos):
         # End Ref
         if _status:
             break
-        if (farthest_pos1 < _pos):
-            farthest_pos1 = _pos
-            farthest_err1 = _result
-        _pos = backtrack2
+        if (farthest_pos4 < _pos):
+            farthest_pos4 = _pos
+            farthest_err4 = _result
+        _pos = backtrack6
         # Option 2:
         # Begin Ref
         (_status, _result, _pos) = (yield (3, _try_ReferenceType, _pos))
         # End Ref
         if _status:
             break
-        if (farthest_pos1 < _pos):
-            farthest_pos1 = _pos
-            farthest_err1 = _result
-        _pos = farthest_pos1
-        _result = farthest_err1
+        if (farthest_pos4 < _pos):
+            farthest_pos4 = _pos
+            farthest_err4 = _result
+        _pos = farthest_pos4
+        _result = farthest_err4
         break
     # End Choice
     yield (_status, _result, _pos)
@@ -949,7 +1890,7 @@ def _parse_ValueType(text, pos=0, fullparse=True):
 ValueType = Rule('ValueType', _parse_ValueType, """
     ValueType = NumberType | ReferenceType
 """)
-def _raise_error53(_text, _pos):
+def _raise_error145(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -968,8 +1909,8 @@ def _raise_error53(_text, _pos):
 def _try_NumberType(_text, _pos):
     # Rule 'NumberType'
     # Begin Choice
-    farthest_err2 = _raise_error57
-    backtrack3 = farthest_pos2 = _pos
+    farthest_err5 = _raise_error149
+    backtrack7 = farthest_pos5 = _pos
     while True:
         # Option 1:
         # Begin Discard
@@ -982,7 +1923,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error59
+                _result = _raise_error151
                 _status = False
             # End Byte
             if not (_status):
@@ -993,10 +1934,10 @@ def _try_NumberType(_text, _pos):
         # End Discard
         if _status:
             break
-        if (farthest_pos2 < _pos):
-            farthest_pos2 = _pos
-            farthest_err2 = _result
-        _pos = backtrack3
+        if (farthest_pos5 < _pos):
+            farthest_pos5 = _pos
+            farthest_err5 = _result
+        _pos = backtrack7
         # Option 2:
         # Begin Discard
         # 0x7e >> `'i64'`
@@ -1008,7 +1949,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error62
+                _result = _raise_error154
                 _status = False
             # End Byte
             if not (_status):
@@ -1019,10 +1960,10 @@ def _try_NumberType(_text, _pos):
         # End Discard
         if _status:
             break
-        if (farthest_pos2 < _pos):
-            farthest_pos2 = _pos
-            farthest_err2 = _result
-        _pos = backtrack3
+        if (farthest_pos5 < _pos):
+            farthest_pos5 = _pos
+            farthest_err5 = _result
+        _pos = backtrack7
         # Option 3:
         # Begin Discard
         # 0x7d >> `'f32'`
@@ -1034,7 +1975,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error65
+                _result = _raise_error157
                 _status = False
             # End Byte
             if not (_status):
@@ -1045,10 +1986,10 @@ def _try_NumberType(_text, _pos):
         # End Discard
         if _status:
             break
-        if (farthest_pos2 < _pos):
-            farthest_pos2 = _pos
-            farthest_err2 = _result
-        _pos = backtrack3
+        if (farthest_pos5 < _pos):
+            farthest_pos5 = _pos
+            farthest_err5 = _result
+        _pos = backtrack7
         # Option 4:
         # Begin Discard
         # 0x7c >> `'f64'`
@@ -1060,7 +2001,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error68
+                _result = _raise_error160
                 _status = False
             # End Byte
             if not (_status):
@@ -1071,11 +2012,11 @@ def _try_NumberType(_text, _pos):
         # End Discard
         if _status:
             break
-        if (farthest_pos2 < _pos):
-            farthest_pos2 = _pos
-            farthest_err2 = _result
-        _pos = farthest_pos2
-        _result = farthest_err2
+        if (farthest_pos5 < _pos):
+            farthest_pos5 = _pos
+            farthest_err5 = _result
+        _pos = farthest_pos5
+        _result = farthest_err5
         break
     # End Choice
     yield (_status, _result, _pos)
@@ -1086,7 +2027,7 @@ def _parse_NumberType(text, pos=0, fullparse=True):
 NumberType = Rule('NumberType', _parse_NumberType, """
     NumberType = 0x7f >> `'i32'` | 0x7e >> `'i64'` | 0x7d >> `'f32'` | 0x7c >> `'f64'`
 """)
-def _raise_error57(_text, _pos):
+def _raise_error149(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1102,7 +2043,7 @@ def _raise_error57(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error59(_text, _pos):
+def _raise_error151(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1118,7 +2059,7 @@ def _raise_error59(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error62(_text, _pos):
+def _raise_error154(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1134,7 +2075,7 @@ def _raise_error62(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error65(_text, _pos):
+def _raise_error157(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1150,7 +2091,7 @@ def _raise_error65(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error68(_text, _pos):
+def _raise_error160(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1169,8 +2110,8 @@ def _raise_error68(_text, _pos):
 def _try_ReferenceType(_text, _pos):
     # Rule 'ReferenceType'
     # Begin Choice
-    farthest_err3 = _raise_error71
-    backtrack4 = farthest_pos3 = _pos
+    farthest_err6 = _raise_error163
+    backtrack8 = farthest_pos6 = _pos
     while True:
         # Option 1:
         # Begin Discard
@@ -1183,7 +2124,7 @@ def _try_ReferenceType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error73
+                _result = _raise_error165
                 _status = False
             # End Byte
             if not (_status):
@@ -1194,10 +2135,10 @@ def _try_ReferenceType(_text, _pos):
         # End Discard
         if _status:
             break
-        if (farthest_pos3 < _pos):
-            farthest_pos3 = _pos
-            farthest_err3 = _result
-        _pos = backtrack4
+        if (farthest_pos6 < _pos):
+            farthest_pos6 = _pos
+            farthest_err6 = _result
+        _pos = backtrack8
         # Option 2:
         # Begin Discard
         # 0x6f >> `'externref'`
@@ -1209,7 +2150,7 @@ def _try_ReferenceType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error76
+                _result = _raise_error168
                 _status = False
             # End Byte
             if not (_status):
@@ -1220,11 +2161,11 @@ def _try_ReferenceType(_text, _pos):
         # End Discard
         if _status:
             break
-        if (farthest_pos3 < _pos):
-            farthest_pos3 = _pos
-            farthest_err3 = _result
-        _pos = farthest_pos3
-        _result = farthest_err3
+        if (farthest_pos6 < _pos):
+            farthest_pos6 = _pos
+            farthest_err6 = _result
+        _pos = farthest_pos6
+        _result = farthest_err6
         break
     # End Choice
     yield (_status, _result, _pos)
@@ -1235,7 +2176,7 @@ def _parse_ReferenceType(text, pos=0, fullparse=True):
 ReferenceType = Rule('ReferenceType', _parse_ReferenceType, """
     ReferenceType = 0x70 >> `'funcref'` | 0x6f >> `'externref'`
 """)
-def _raise_error71(_text, _pos):
+def _raise_error163(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1251,7 +2192,7 @@ def _raise_error71(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error73(_text, _pos):
+def _raise_error165(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1267,7 +2208,7 @@ def _raise_error73(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error76(_text, _pos):
+def _raise_error168(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1295,20 +2236,20 @@ def _try_vec(_text, _pos, element):
         length = _result
         # Begin List
         # element{length}
-        staging3 = []
+        staging4 = []
         while True:
-            checkpoint3 = _pos
+            checkpoint4 = _pos
             # Begin Ref
             (_status, _result, _pos) = (yield (3, element, _pos))
             # End Ref
             if not (_status):
-                _pos = checkpoint3
+                _pos = checkpoint4
                 break
-            staging3.append(_result)
-            if (len(staging3) == length):
+            staging4.append(_result)
+            if (len(staging4) == length):
                 break
-        if (len(staging3) >= length):
-            _result = staging3
+        if (len(staging4) >= length):
+            _result = staging4
             _status = True
         # End List
     # End Let
@@ -1327,20 +2268,20 @@ def _try_ByteString(_text, _pos, size):
     # bytechar{size} |> `lambda x: b''.join(x)`
     # Begin List
     # bytechar{size}
-    staging4 = []
+    staging5 = []
     while True:
-        checkpoint4 = _pos
+        checkpoint5 = _pos
         # Begin Ref
         (_status, _result, _pos) = (yield (3, _try_bytechar, _pos))
         # End Ref
         if not (_status):
-            _pos = checkpoint4
+            _pos = checkpoint5
             break
-        staging4.append(_result)
-        if (len(staging4) == size):
+        staging5.append(_result)
+        if (len(staging5) == size):
             break
-    if (len(staging4) >= size):
-        _result = staging4
+    if (len(staging5) >= size):
+        _result = staging5
         _status = True
     # End List
     if _status:
@@ -1367,7 +2308,7 @@ def _try_bytechar(_text, _pos):
         _pos = match1.end()
         _status = True
     else:
-        _result = _raise_error89
+        _result = _raise_error181
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -1378,7 +2319,7 @@ def _parse_bytechar(text, pos=0, fullparse=True):
 bytechar = Rule('bytechar', _parse_bytechar, """
     bytechar = /[\\x00-\\xFF]/
 """)
-def _raise_error89(_text, _pos):
+def _raise_error181(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1400,8 +2341,8 @@ def _try_Name(_text, _pos):
     # vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
     # Begin Call
     # vec(bytechar)
-    func5 = _ParseFunction(_try_vec, (_try_bytechar,), ())
-    (_status, _result, _pos) = (yield (3, func5, _pos))
+    func6 = _ParseFunction(_try_vec, (_try_bytechar,), ())
+    (_status, _result, _pos) = (yield (3, func6, _pos))
     # End Call
     if _status:
         arg2 = _result
@@ -1443,7 +2384,7 @@ class LocatedName(Node):
 
 def _try_LocatedName(_text, _pos):
     # Begin Seq
-    start_pos5 = _pos
+    start_pos15 = _pos
     while True:
         _result = _pos
         _status = True
@@ -1458,7 +2399,7 @@ def _try_LocatedName(_text, _pos):
         _status = True
         end = _result
         _result = LocatedName(start, name, end)
-        _result._metadata.position_info = (start_pos5, _pos)
+        _result._metadata.position_info = (start_pos15, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
@@ -1475,7 +2416,7 @@ def _try_byte(_text, _pos):
         _pos = match2.end()
         _status = True
     else:
-        _result = _raise_error106
+        _result = _raise_error198
         _status = False
     # End Regex
     if _status:
@@ -1492,7 +2433,7 @@ def _parse_byte(text, pos=0, fullparse=True):
 byte = Rule('byte', _parse_byte, """
     byte = /[\\x00-\\xFF]/ |> `ord`
 """)
-def _raise_error106(_text, _pos):
+def _raise_error198(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1559,7 +2500,7 @@ def _try_f32(_text, _pos):
         _pos = match3.end()
         _status = True
     else:
-        _result = _raise_error116
+        _result = _raise_error208
         _status = False
     # End Regex
     if _status:
@@ -1576,7 +2517,7 @@ def _parse_f32(text, pos=0, fullparse=True):
 f32 = Rule('f32', _parse_f32, """
     f32 = /[\\x00-\\xFF]{4}/ |> `lambda x: struct.unpack('<f', x)[0]`
 """)
-def _raise_error116(_text, _pos):
+def _raise_error208(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1604,7 +2545,7 @@ def _try_f64(_text, _pos):
         _pos = match4.end()
         _status = True
     else:
-        _result = _raise_error120
+        _result = _raise_error212
         _status = False
     # End Regex
     if _status:
@@ -1621,7 +2562,7 @@ def _parse_f64(text, pos=0, fullparse=True):
 f64 = Rule('f64', _parse_f64, """
     f64 = /[\\x00-\\xFF]{8}/ |> `lambda x: struct.unpack('<d', x)[0]`
 """)
-def _raise_error120(_text, _pos):
+def _raise_error212(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1689,7 +2630,7 @@ def _try_LEB128(_text, _pos):
         _pos = match5.end()
         _status = True
     else:
-        _result = _raise_error131
+        _result = _raise_error223
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -1700,7 +2641,7 @@ def _parse_LEB128(text, pos=0, fullparse=True):
 LEB128 = Rule('LEB128', _parse_LEB128, """
     LEB128 = /[\\x80-\\xFF]*[\\x00-\\x7F]/
 """)
-def _raise_error131(_text, _pos):
+def _raise_error223(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None

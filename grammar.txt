@@ -3,33 +3,105 @@ import struct
 ```
 
 class Module {
-    magic: b'\x00\x61\x73\x6D'
-    version: b'\x01\x00\x00\x00'
+    let magic: b'\x00\x61\x73\x6D'
+    let version: b'\x01\x00\x00\x00'
+
     custom1: CustomSection*
-    typesec: TypeSection?
+
+    type_section: TypeSection?
     custom2: CustomSection*
+
+    import_section: ImportSection?
+    custom3: CustomSection*
 }
 
 
 # Sections.
 class CustomSection {
-    id: 0x00
-    size: u32
-    name: let loc = LocatedName in `loc.name`
-    body: ByteString(`size - (loc.end - loc.start)`)
+    let id: 0x00
+    let size: u32
+    let loc: LocatedName
+    let remaining = `size - (loc.end - loc.start)`
+
+    name: `loc.name`
+    body: ByteString(remaining)
 }
 
 class TypeSection {
-    id: 0x01
-    size: u32
+    let id: 0x01
+    let size: u32
     func_types: vec(FuncType)
+}
+
+class ImportSection {
+    let id: 0x02
+    imports: vec(Import)
+}
+
+
+# Imports.
+class Import {
+    module: Name
+    name: Name
+    descriptor: ImportDescriptor
+}
+
+ImportDescriptor = ImportFunc | ImportTable | ImportMemory | ImportGlobal
+
+class ImportFunc {
+    let id: 0x00
+    type_index: u32
+}
+
+class ImportTable {
+    let id: 0x01
+    table_type: TableType
+}
+
+class ImportMemory {
+    let id: 0x02
+    limits: Limits
+}
+
+class ImportGlobal {
+    let id: 0x03
+    type: GlobalType
+}
+
+
+# Tables.
+class TableType {
+    elements: ReferenceType
+    limits: Limits
+}
+
+
+# Limits.
+Limits = MinLimit | MinMaxLimits
+
+class MinLimit {
+    let id: 0x00
+    min: u32
+    max: `None`
+}
+
+class MinMaxLimits {
+    let id: 0x01
+    min: u32
+    max: u32
 }
 
 
 # Types.
 class FuncType {
-    params: 0x60 >> vec(ValueType)
+    let id: 0x60
+    params: vec(ValueType)
     results: vec(ValueType)
+}
+
+class GlobalType {
+    type: ValueType
+    modifier: 0x00 >> `'const'` | 0x01 >> `'var'`
 }
 
 ValueType = NumberType | ReferenceType
