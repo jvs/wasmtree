@@ -93,6 +93,6 @@ def test_names():
     ]
     for name in names:
         bytes = Buffer().write_name(name).getvalue()
-        received = parser.name.parse(bytes)
+        received = parser.Name.parse(bytes)
         assert received == name
 

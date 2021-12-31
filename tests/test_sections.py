@@ -15,6 +15,7 @@ def test_custom_section():
     assert received == parser.CustomSection(
         id=0x00,
         size=8,
+        name='test',
         body=doc[2:],
     )
 

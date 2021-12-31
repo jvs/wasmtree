@@ -15,6 +15,7 @@ class Module {
 class CustomSection {
     id: 0x00
     size: u32
+    name: Peek(Name)
     body: bytechar{size} |> `lambda x: b''.join(x)`
 }
 
@@ -53,7 +54,7 @@ vec(element) =>
 
 
 # Names.
-name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
 bytechar = b/[\x00-\xFF]/
 
 

@@ -18,6 +18,7 @@ class Module {
 class CustomSection {
     id: 0x00
     size: u32
+    name: Peek(Name)
     body: bytechar{size} |> `lambda x: b''.join(x)`
 }
 
@@ -56,7 +57,7 @@ vec(element) =>
 
 
 # Names.
-name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
 bytechar = b/[\\x00-\\xFF]/
 
 
@@ -653,19 +654,21 @@ class CustomSection(Node):
     class CustomSection {
         id: 0x0
         size: u32
+        name: Peek(Name)
         body: bytechar{size} |> `lambda x: b''.join(x)`
     }
     """
-    _fields = ('id', 'size', 'body')
+    _fields = ('id', 'size', 'name', 'body')
 
-    def __init__(self, id, size, body):
+    def __init__(self, id, size, name, body):
         Node.__init__(self)
         self.id = id
         self.size = size
+        self.name = name
         self.body = body
 
     def __repr__(self):
-        return f'CustomSection(id={self.id!r}, size={self.size!r}, body={self.body!r})'
+        return f'CustomSection(id={self.id!r}, size={self.size!r}, name={self.name!r}, body={self.body!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -695,6 +698,18 @@ def _try_CustomSection(_text, _pos):
         if not (_status):
             break
         size = _result
+        # Begin Peek
+        # Peek(Name)
+        backtrack2 = _pos
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_Name, _pos))
+        # End Ref
+        if _status:
+            _pos = backtrack2
+        # End Peek
+        if not (_status):
+            break
+        name = _result
         # Begin Apply
         # bytechar{size} |> `lambda x: b''.join(x)`
         # Begin List
@@ -724,7 +739,7 @@ def _try_CustomSection(_text, _pos):
         if not (_status):
             break
         body = _result
-        _result = CustomSection(id, size, body)
+        _result = CustomSection(id, size, name, body)
         _result._metadata.position_info = (start_pos2, _pos)
         break
     # End Seq
@@ -781,7 +796,7 @@ def _try_TypeSection(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error30
+            _result = _raise_error33
             _status = False
         # End Byte
         if not (_status):
@@ -807,7 +822,7 @@ def _try_TypeSection(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error30(_text, _pos):
+def _raise_error33(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -859,7 +874,7 @@ def _try_FuncType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error41
+                _result = _raise_error44
                 _status = False
             # End Byte
             if not (_status):
@@ -888,7 +903,7 @@ def _try_FuncType(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error41(_text, _pos):
+def _raise_error44(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -907,8 +922,8 @@ def _raise_error41(_text, _pos):
 def _try_ValueType(_text, _pos):
     # Rule 'ValueType'
     # Begin Choice
-    farthest_err1 = _raise_error50
-    backtrack2 = farthest_pos1 = _pos
+    farthest_err1 = _raise_error53
+    backtrack3 = farthest_pos1 = _pos
     while True:
         # Option 1:
         # Begin Ref
@@ -919,7 +934,7 @@ def _try_ValueType(_text, _pos):
         if (farthest_pos1 < _pos):
             farthest_pos1 = _pos
             farthest_err1 = _result
-        _pos = backtrack2
+        _pos = backtrack3
         # Option 2:
         # Begin Ref
         (_status, _result, _pos) = (yield (3, _try_ReferenceType, _pos))
@@ -941,7 +956,7 @@ def _parse_ValueType(text, pos=0, fullparse=True):
 ValueType = Rule('ValueType', _parse_ValueType, """
     ValueType = NumberType | ReferenceType
 """)
-def _raise_error50(_text, _pos):
+def _raise_error53(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -960,8 +975,8 @@ def _raise_error50(_text, _pos):
 def _try_NumberType(_text, _pos):
     # Rule 'NumberType'
     # Begin Choice
-    farthest_err2 = _raise_error54
-    backtrack3 = farthest_pos2 = _pos
+    farthest_err2 = _raise_error57
+    backtrack4 = farthest_pos2 = _pos
     while True:
         # Option 1:
         # Begin Discard
@@ -974,7 +989,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error56
+                _result = _raise_error59
                 _status = False
             # End Byte
             if not (_status):
@@ -988,7 +1003,7 @@ def _try_NumberType(_text, _pos):
         if (farthest_pos2 < _pos):
             farthest_pos2 = _pos
             farthest_err2 = _result
-        _pos = backtrack3
+        _pos = backtrack4
         # Option 2:
         # Begin Discard
         # 0x7e >> `'i64'`
@@ -1000,7 +1015,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error59
+                _result = _raise_error62
                 _status = False
             # End Byte
             if not (_status):
@@ -1014,7 +1029,7 @@ def _try_NumberType(_text, _pos):
         if (farthest_pos2 < _pos):
             farthest_pos2 = _pos
             farthest_err2 = _result
-        _pos = backtrack3
+        _pos = backtrack4
         # Option 3:
         # Begin Discard
         # 0x7d >> `'f32'`
@@ -1026,7 +1041,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error62
+                _result = _raise_error65
                 _status = False
             # End Byte
             if not (_status):
@@ -1040,7 +1055,7 @@ def _try_NumberType(_text, _pos):
         if (farthest_pos2 < _pos):
             farthest_pos2 = _pos
             farthest_err2 = _result
-        _pos = backtrack3
+        _pos = backtrack4
         # Option 4:
         # Begin Discard
         # 0x7c >> `'f64'`
@@ -1052,7 +1067,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error65
+                _result = _raise_error68
                 _status = False
             # End Byte
             if not (_status):
@@ -1078,7 +1093,7 @@ def _parse_NumberType(text, pos=0, fullparse=True):
 NumberType = Rule('NumberType', _parse_NumberType, """
     NumberType = 0x7f >> `'i32'` | 0x7e >> `'i64'` | 0x7d >> `'f32'` | 0x7c >> `'f64'`
 """)
-def _raise_error54(_text, _pos):
+def _raise_error57(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1094,7 +1109,7 @@ def _raise_error54(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error56(_text, _pos):
+def _raise_error59(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1110,7 +1125,7 @@ def _raise_error56(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error59(_text, _pos):
+def _raise_error62(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1126,7 +1141,7 @@ def _raise_error59(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error62(_text, _pos):
+def _raise_error65(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1142,7 +1157,7 @@ def _raise_error62(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error65(_text, _pos):
+def _raise_error68(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1161,8 +1176,8 @@ def _raise_error65(_text, _pos):
 def _try_ReferenceType(_text, _pos):
     # Rule 'ReferenceType'
     # Begin Choice
-    farthest_err3 = _raise_error68
-    backtrack4 = farthest_pos3 = _pos
+    farthest_err3 = _raise_error71
+    backtrack5 = farthest_pos3 = _pos
     while True:
         # Option 1:
         # Begin Discard
@@ -1175,7 +1190,7 @@ def _try_ReferenceType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error70
+                _result = _raise_error73
                 _status = False
             # End Byte
             if not (_status):
@@ -1189,7 +1204,7 @@ def _try_ReferenceType(_text, _pos):
         if (farthest_pos3 < _pos):
             farthest_pos3 = _pos
             farthest_err3 = _result
-        _pos = backtrack4
+        _pos = backtrack5
         # Option 2:
         # Begin Discard
         # 0x6f >> `'externref'`
@@ -1201,7 +1216,7 @@ def _try_ReferenceType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error73
+                _result = _raise_error76
                 _status = False
             # End Byte
             if not (_status):
@@ -1227,7 +1242,7 @@ def _parse_ReferenceType(text, pos=0, fullparse=True):
 ReferenceType = Rule('ReferenceType', _parse_ReferenceType, """
     ReferenceType = 0x70 >> `'funcref'` | 0x6f >> `'externref'`
 """)
-def _raise_error68(_text, _pos):
+def _raise_error71(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1243,7 +1258,7 @@ def _raise_error68(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error70(_text, _pos):
+def _raise_error73(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1259,7 +1274,7 @@ def _raise_error70(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error73(_text, _pos):
+def _raise_error76(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1313,8 +1328,8 @@ vec = Rule('vec', _parse_vec, """
     vec(element) = let length = u32 in
     element{length}
 """)
-def _try_name(_text, _pos):
-    # Rule 'name'
+def _try_Name(_text, _pos):
+    # Rule 'Name'
     # Begin Apply
     # vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
     # Begin Call
@@ -1330,11 +1345,11 @@ def _try_name(_text, _pos):
     # End Apply
     yield (_status, _result, _pos)
 
-def _parse_name(text, pos=0, fullparse=True):
-    return _run(text, pos, _try_name, fullparse)
+def _parse_Name(text, pos=0, fullparse=True):
+    return _run(text, pos, _try_Name, fullparse)
 
-name = Rule('name', _parse_name, """
-    name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+Name = Rule('Name', _parse_Name, """
+    Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
 """)
 def _try_bytechar(_text, _pos):
     # Rule 'bytechar'
@@ -1346,7 +1361,7 @@ def _try_bytechar(_text, _pos):
         _pos = match1.end()
         _status = True
     else:
-        _result = _raise_error87
+        _result = _raise_error90
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -1357,7 +1372,7 @@ def _parse_bytechar(text, pos=0, fullparse=True):
 bytechar = Rule('bytechar', _parse_bytechar, """
     bytechar = /[\\x00-\\xFF]/
 """)
-def _raise_error87(_text, _pos):
+def _raise_error90(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1385,7 +1400,7 @@ def _try_byte(_text, _pos):
         _pos = match2.end()
         _status = True
     else:
-        _result = _raise_error90
+        _result = _raise_error93
         _status = False
     # End Regex
     if _status:
@@ -1402,7 +1417,7 @@ def _parse_byte(text, pos=0, fullparse=True):
 byte = Rule('byte', _parse_byte, """
     byte = /[\\x00-\\xFF]/ |> `ord`
 """)
-def _raise_error90(_text, _pos):
+def _raise_error93(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1469,7 +1484,7 @@ def _try_f32(_text, _pos):
         _pos = match3.end()
         _status = True
     else:
-        _result = _raise_error100
+        _result = _raise_error103
         _status = False
     # End Regex
     if _status:
@@ -1486,7 +1501,7 @@ def _parse_f32(text, pos=0, fullparse=True):
 f32 = Rule('f32', _parse_f32, """
     f32 = /[\\x00-\\xFF]{4}/ |> `lambda x: struct.unpack('<f', x)[0]`
 """)
-def _raise_error100(_text, _pos):
+def _raise_error103(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1514,7 +1529,7 @@ def _try_f64(_text, _pos):
         _pos = match4.end()
         _status = True
     else:
-        _result = _raise_error104
+        _result = _raise_error107
         _status = False
     # End Regex
     if _status:
@@ -1531,7 +1546,7 @@ def _parse_f64(text, pos=0, fullparse=True):
 f64 = Rule('f64', _parse_f64, """
     f64 = /[\\x00-\\xFF]{8}/ |> `lambda x: struct.unpack('<d', x)[0]`
 """)
-def _raise_error104(_text, _pos):
+def _raise_error107(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1599,7 +1614,7 @@ def _try_LEB128(_text, _pos):
         _pos = match5.end()
         _status = True
     else:
-        _result = _raise_error115
+        _result = _raise_error118
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -1610,7 +1625,7 @@ def _parse_LEB128(text, pos=0, fullparse=True):
 LEB128 = Rule('LEB128', _parse_LEB128, """
     LEB128 = /[\\x80-\\xFF]*[\\x00-\\x7F]/
 """)
-def _raise_error115(_text, _pos):
+def _raise_error118(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
