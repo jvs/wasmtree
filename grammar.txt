@@ -2,15 +2,63 @@
 import struct
 ```
 
+class Module {
+    magic: b'\x00\x61\x73\x6D'
+    version: b'\x01\x00\x00\x00'
+    custom1: CustomSection*
+    typesec: TypeSection?
+    custom2: CustomSection*
+}
+
+
+# Sections.
+class CustomSection {
+    id: 0x00
+    size: u32
+    body: bytechar{size} |> `lambda x: b''.join(x)`
+}
+
+class TypeSection {
+    id: 0x01
+    size: u32
+    func_types: vec(FuncType)
+}
+
+
+# Types.
+class FuncType {
+    params: 0x60 >> vec(ValueType)
+    results: vec(ValueType)
+}
+
+ValueType = NumberType | ReferenceType
+
+NumberType = (
+    0x7F >> `'i32'`
+    | 0x7E >> `'i64'`
+    | 0x7D >> `'f32'`
+    | 0x7C >> `'f64'`
+)
+
+ReferenceType = (
+    0x70 >> `'funcref'`
+    | 0x6F >> `'externref'`
+)
+
+
+# Vectors.
 vec(element) =>
     let length = u32 in
     element{length}
 
-name = vec(char) |> `lambda bytes: b''.join(bytes).decode('utf8')`
-char = b/[\x00-\xFF]/
 
+# Names.
+name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+bytechar = b/[\x00-\xFF]/
+
+
+# Numbers.
 byte = b/[\x00-\xFF]/ |> `ord`
-
 u32 = UnsignedInt
 i32 = SignedInt
 i64 = SignedInt
@@ -19,7 +67,6 @@ f64 = b/[\x00-\xFF]{8}/ |> `lambda x: struct.unpack('<d', x)[0]`
 
 SignedInt = LEB128 |> `decode_signed_int`
 UnsignedInt = LEB128 |> `decode_unsigned_int`
-
 LEB128 = b/[\x80-\xFF]*[\x00-\x7F]/
 
 ```

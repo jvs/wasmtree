@@ -50,6 +50,33 @@ class Buffer:
         self.write_bytes(bytes_str)
         return self
 
+    def write_type(self, type):
+        types = {
+            'i32': 0x7F,
+            'i64': 0x7E,
+            'f32': 0x7D,
+            'f64': 0x7C,
+            'funcref': 0x70,
+            'externref': 0x6F,
+        }
+
+        if isinstance(type, str):
+            self.write_byte(types[type])
+            return self
+
+        if hasattr(type, 'params') and hasattr(type, 'results'):
+            self.write_byte(0x60)
+
+            self.write_u32(len(type.params))
+            for param in type.params:
+                self.write_type(param)
+
+            self.write_u32(len(type.results))
+            for result in type.results:
+                self.write_type(result)
+
+            return self
+
     def write_u32(self, value):
         assert isinstance(value, int)
         assert 0 <= value <= (2 ** 32)
