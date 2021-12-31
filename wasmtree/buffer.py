@@ -19,6 +19,12 @@ class Buffer:
         self._buffer.write(value)
         return self
 
+    def write_custom_section(self, name, body):
+        stage = Buffer()
+        stage.write_name(name)
+        stage.write_bytes(body)
+        return self._write_staged_section(0x00, stage)
+
     def write_i32(self, value):
         assert isinstance(value, int)
         min_int = -1 * (2 ** 31)
@@ -77,10 +83,26 @@ class Buffer:
 
             return self
 
+    def write_type_section(self, func_types):
+        stage = Buffer()
+        stage.write_u32(len(func_types))
+
+        for func_type in func_types:
+            stage.write_type(func_type)
+
+        return self._write_staged_section(0x01, stage)
+
     def write_u32(self, value):
         assert isinstance(value, int)
         assert 0 <= value <= (2 ** 32)
         self._write_unsigned_integer(value)
+        return self
+
+    def _write_staged_section(self, section_id, buffer):
+        contents = buffer.getvalue()
+        self.write_byte(section_id)
+        self.write_u32(len(contents))
+        self.write_bytes(contents)
         return self
 
     def _write_signed_integer(self, value):

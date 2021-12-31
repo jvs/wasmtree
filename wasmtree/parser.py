@@ -18,8 +18,8 @@ class Module {
 class CustomSection {
     id: 0x00
     size: u32
-    name: Peek(Name)
-    body: bytechar{size} |> `lambda x: b''.join(x)`
+    name: let loc = LocatedName in `loc.name`
+    body: ByteString(`size - (loc.end - loc.start)`)
 }
 
 class TypeSection {
@@ -56,9 +56,20 @@ vec(element) =>
     element{length}
 
 
+# Uninterpreted bytes.
+ByteString(size) => bytechar{size} |> `lambda x: b''.join(x)`
+bytechar = b/[\\x00-\\xFF]/
+
+
 # Names.
 Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
-bytechar = b/[\\x00-\\xFF]/
+
+
+class LocatedName {
+    start: `_pos`
+    name: Name
+    end: `_pos`
+}
 
 
 # Numbers.
@@ -654,8 +665,9 @@ class CustomSection(Node):
     class CustomSection {
         id: 0x0
         size: u32
-        name: Peek(Name)
-        body: bytechar{size} |> `lambda x: b''.join(x)`
+        name: let loc = LocatedName in
+    `loc.name`
+        body: ByteString(`size - (loc.end - loc.start)`)
     }
     """
     _fields = ('id', 'size', 'name', 'body')
@@ -698,44 +710,25 @@ def _try_CustomSection(_text, _pos):
         if not (_status):
             break
         size = _result
-        # Begin Peek
-        # Peek(Name)
-        backtrack2 = _pos
+        # Begin Let
+        # let loc = LocatedName in
+        # `loc.name`
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_Name, _pos))
+        (_status, _result, _pos) = (yield (3, _try_LocatedName, _pos))
         # End Ref
         if _status:
-            _pos = backtrack2
-        # End Peek
+            loc = _result
+            _result = loc.name
+            _status = True
+        # End Let
         if not (_status):
             break
         name = _result
-        # Begin Apply
-        # bytechar{size} |> `lambda x: b''.join(x)`
-        # Begin List
-        # bytechar{size}
-        staging3 = []
-        while True:
-            checkpoint3 = _pos
-            # Begin Ref
-            (_status, _result, _pos) = (yield (3, _try_bytechar, _pos))
-            # End Ref
-            if not (_status):
-                _pos = checkpoint3
-                break
-            staging3.append(_result)
-            if (len(staging3) == size):
-                break
-        if (len(staging3) >= size):
-            _result = staging3
-            _status = True
-        # End List
-        if _status:
-            arg1 = _result
-            _result = lambda x: b''.join(x)
-            _status = True
-            _result = _result(arg1)
-        # End Apply
+        # Begin Call
+        # ByteString(`size - (loc.end - loc.start)`)
+        func1 = _ParseFunction(_try_ByteString, (size - (loc.end - loc.start),), ())
+        (_status, _result, _pos) = (yield (3, func1, _pos))
+        # End Call
         if not (_status):
             break
         body = _result
@@ -810,8 +803,8 @@ def _try_TypeSection(_text, _pos):
         size = _result
         # Begin Call
         # vec(FuncType)
-        func1 = _ParseFunction(_try_vec, (_try_FuncType,), ())
-        (_status, _result, _pos) = (yield (3, func1, _pos))
+        func2 = _ParseFunction(_try_vec, (_try_FuncType,), ())
+        (_status, _result, _pos) = (yield (3, func2, _pos))
         # End Call
         if not (_status):
             break
@@ -881,8 +874,8 @@ def _try_FuncType(_text, _pos):
                 break
             # Begin Call
             # vec(ValueType)
-            func2 = _ParseFunction(_try_vec, (_try_ValueType,), ())
-            (_status, _result, _pos) = (yield (3, func2, _pos))
+            func3 = _ParseFunction(_try_vec, (_try_ValueType,), ())
+            (_status, _result, _pos) = (yield (3, func3, _pos))
             # End Call
             break
         # End Discard
@@ -891,8 +884,8 @@ def _try_FuncType(_text, _pos):
         params = _result
         # Begin Call
         # vec(ValueType)
-        func3 = _ParseFunction(_try_vec, (_try_ValueType,), ())
-        (_status, _result, _pos) = (yield (3, func3, _pos))
+        func4 = _ParseFunction(_try_vec, (_try_ValueType,), ())
+        (_status, _result, _pos) = (yield (3, func4, _pos))
         # End Call
         if not (_status):
             break
@@ -923,7 +916,7 @@ def _try_ValueType(_text, _pos):
     # Rule 'ValueType'
     # Begin Choice
     farthest_err1 = _raise_error53
-    backtrack3 = farthest_pos1 = _pos
+    backtrack2 = farthest_pos1 = _pos
     while True:
         # Option 1:
         # Begin Ref
@@ -934,7 +927,7 @@ def _try_ValueType(_text, _pos):
         if (farthest_pos1 < _pos):
             farthest_pos1 = _pos
             farthest_err1 = _result
-        _pos = backtrack3
+        _pos = backtrack2
         # Option 2:
         # Begin Ref
         (_status, _result, _pos) = (yield (3, _try_ReferenceType, _pos))
@@ -976,7 +969,7 @@ def _try_NumberType(_text, _pos):
     # Rule 'NumberType'
     # Begin Choice
     farthest_err2 = _raise_error57
-    backtrack4 = farthest_pos2 = _pos
+    backtrack3 = farthest_pos2 = _pos
     while True:
         # Option 1:
         # Begin Discard
@@ -1003,7 +996,7 @@ def _try_NumberType(_text, _pos):
         if (farthest_pos2 < _pos):
             farthest_pos2 = _pos
             farthest_err2 = _result
-        _pos = backtrack4
+        _pos = backtrack3
         # Option 2:
         # Begin Discard
         # 0x7e >> `'i64'`
@@ -1029,7 +1022,7 @@ def _try_NumberType(_text, _pos):
         if (farthest_pos2 < _pos):
             farthest_pos2 = _pos
             farthest_err2 = _result
-        _pos = backtrack4
+        _pos = backtrack3
         # Option 3:
         # Begin Discard
         # 0x7d >> `'f32'`
@@ -1055,7 +1048,7 @@ def _try_NumberType(_text, _pos):
         if (farthest_pos2 < _pos):
             farthest_pos2 = _pos
             farthest_err2 = _result
-        _pos = backtrack4
+        _pos = backtrack3
         # Option 4:
         # Begin Discard
         # 0x7c >> `'f64'`
@@ -1177,7 +1170,7 @@ def _try_ReferenceType(_text, _pos):
     # Rule 'ReferenceType'
     # Begin Choice
     farthest_err3 = _raise_error71
-    backtrack5 = farthest_pos3 = _pos
+    backtrack4 = farthest_pos3 = _pos
     while True:
         # Option 1:
         # Begin Discard
@@ -1204,7 +1197,7 @@ def _try_ReferenceType(_text, _pos):
         if (farthest_pos3 < _pos):
             farthest_pos3 = _pos
             farthest_err3 = _result
-        _pos = backtrack5
+        _pos = backtrack4
         # Option 2:
         # Begin Discard
         # 0x6f >> `'externref'`
@@ -1302,20 +1295,20 @@ def _try_vec(_text, _pos, element):
         length = _result
         # Begin List
         # element{length}
-        staging4 = []
+        staging3 = []
         while True:
-            checkpoint4 = _pos
+            checkpoint3 = _pos
             # Begin Ref
             (_status, _result, _pos) = (yield (3, element, _pos))
             # End Ref
             if not (_status):
-                _pos = checkpoint4
+                _pos = checkpoint3
                 break
-            staging4.append(_result)
-            if (len(staging4) == length):
+            staging3.append(_result)
+            if (len(staging3) == length):
                 break
-        if (len(staging4) >= length):
-            _result = staging4
+        if (len(staging3) >= length):
+            _result = staging3
             _status = True
         # End List
     # End Let
@@ -1328,28 +1321,41 @@ vec = Rule('vec', _parse_vec, """
     vec(element) = let length = u32 in
     element{length}
 """)
-def _try_Name(_text, _pos):
-    # Rule 'Name'
+def _try_ByteString(_text, _pos, size):
+    # Rule 'ByteString'
     # Begin Apply
-    # vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
-    # Begin Call
-    # vec(bytechar)
-    func4 = _ParseFunction(_try_vec, (_try_bytechar,), ())
-    (_status, _result, _pos) = (yield (3, func4, _pos))
-    # End Call
-    if _status:
-        arg2 = _result
-        _result = lambda x: b''.join(x).decode('utf8')
+    # bytechar{size} |> `lambda x: b''.join(x)`
+    # Begin List
+    # bytechar{size}
+    staging4 = []
+    while True:
+        checkpoint4 = _pos
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_bytechar, _pos))
+        # End Ref
+        if not (_status):
+            _pos = checkpoint4
+            break
+        staging4.append(_result)
+        if (len(staging4) == size):
+            break
+    if (len(staging4) >= size):
+        _result = staging4
         _status = True
-        _result = _result(arg2)
+    # End List
+    if _status:
+        arg1 = _result
+        _result = lambda x: b''.join(x)
+        _status = True
+        _result = _result(arg1)
     # End Apply
     yield (_status, _result, _pos)
 
-def _parse_Name(text, pos=0, fullparse=True):
-    return _run(text, pos, _try_Name, fullparse)
+def _parse_ByteString(text, pos=0, fullparse=True):
+    return _run(text, pos, _try_ByteString, fullparse)
 
-Name = Rule('Name', _parse_Name, """
-    Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+ByteString = Rule('ByteString', _parse_ByteString, """
+    ByteString(size) = bytechar{size} |> `lambda x: b''.join(x)`
 """)
 def _try_bytechar(_text, _pos):
     # Rule 'bytechar'
@@ -1361,7 +1367,7 @@ def _try_bytechar(_text, _pos):
         _pos = match1.end()
         _status = True
     else:
-        _result = _raise_error90
+        _result = _raise_error89
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -1372,7 +1378,7 @@ def _parse_bytechar(text, pos=0, fullparse=True):
 bytechar = Rule('bytechar', _parse_bytechar, """
     bytechar = /[\\x00-\\xFF]/
 """)
-def _raise_error90(_text, _pos):
+def _raise_error89(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1388,6 +1394,75 @@ def _raise_error90(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
+def _try_Name(_text, _pos):
+    # Rule 'Name'
+    # Begin Apply
+    # vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+    # Begin Call
+    # vec(bytechar)
+    func5 = _ParseFunction(_try_vec, (_try_bytechar,), ())
+    (_status, _result, _pos) = (yield (3, func5, _pos))
+    # End Call
+    if _status:
+        arg2 = _result
+        _result = lambda x: b''.join(x).decode('utf8')
+        _status = True
+        _result = _result(arg2)
+    # End Apply
+    yield (_status, _result, _pos)
+
+def _parse_Name(text, pos=0, fullparse=True):
+    return _run(text, pos, _try_Name, fullparse)
+
+Name = Rule('Name', _parse_Name, """
+    Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
+""")
+class LocatedName(Node):
+    """
+    class LocatedName {
+        start: `_pos`
+        name: Name
+        end: `_pos`
+    }
+    """
+    _fields = ('start', 'name', 'end')
+
+    def __init__(self, start, name, end):
+        Node.__init__(self)
+        self.start = start
+        self.name = name
+        self.end = end
+
+    def __repr__(self):
+        return f'LocatedName(start={self.start!r}, name={self.name!r}, end={self.end!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_LocatedName, fullparse)
+
+
+def _try_LocatedName(_text, _pos):
+    # Begin Seq
+    start_pos5 = _pos
+    while True:
+        _result = _pos
+        _status = True
+        start = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_Name, _pos))
+        # End Ref
+        if not (_status):
+            break
+        name = _result
+        _result = _pos
+        _status = True
+        end = _result
+        _result = LocatedName(start, name, end)
+        _result._metadata.position_info = (start_pos5, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
 def _try_byte(_text, _pos):
     # Rule 'byte'
     # Begin Apply
@@ -1400,7 +1475,7 @@ def _try_byte(_text, _pos):
         _pos = match2.end()
         _status = True
     else:
-        _result = _raise_error93
+        _result = _raise_error106
         _status = False
     # End Regex
     if _status:
@@ -1417,7 +1492,7 @@ def _parse_byte(text, pos=0, fullparse=True):
 byte = Rule('byte', _parse_byte, """
     byte = /[\\x00-\\xFF]/ |> `ord`
 """)
-def _raise_error93(_text, _pos):
+def _raise_error106(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1484,7 +1559,7 @@ def _try_f32(_text, _pos):
         _pos = match3.end()
         _status = True
     else:
-        _result = _raise_error103
+        _result = _raise_error116
         _status = False
     # End Regex
     if _status:
@@ -1501,7 +1576,7 @@ def _parse_f32(text, pos=0, fullparse=True):
 f32 = Rule('f32', _parse_f32, """
     f32 = /[\\x00-\\xFF]{4}/ |> `lambda x: struct.unpack('<f', x)[0]`
 """)
-def _raise_error103(_text, _pos):
+def _raise_error116(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1529,7 +1604,7 @@ def _try_f64(_text, _pos):
         _pos = match4.end()
         _status = True
     else:
-        _result = _raise_error107
+        _result = _raise_error120
         _status = False
     # End Regex
     if _status:
@@ -1546,7 +1621,7 @@ def _parse_f64(text, pos=0, fullparse=True):
 f64 = Rule('f64', _parse_f64, """
     f64 = /[\\x00-\\xFF]{8}/ |> `lambda x: struct.unpack('<d', x)[0]`
 """)
-def _raise_error107(_text, _pos):
+def _raise_error120(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -1614,7 +1689,7 @@ def _try_LEB128(_text, _pos):
         _pos = match5.end()
         _status = True
     else:
-        _result = _raise_error118
+        _result = _raise_error131
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -1625,7 +1700,7 @@ def _parse_LEB128(text, pos=0, fullparse=True):
 LEB128 = Rule('LEB128', _parse_LEB128, """
     LEB128 = /[\\x80-\\xFF]*[\\x00-\\x7F]/
 """)
-def _raise_error118(_text, _pos):
+def _raise_error131(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None

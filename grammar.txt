@@ -15,8 +15,8 @@ class Module {
 class CustomSection {
     id: 0x00
     size: u32
-    name: Peek(Name)
-    body: bytechar{size} |> `lambda x: b''.join(x)`
+    name: let loc = LocatedName in `loc.name`
+    body: ByteString(`size - (loc.end - loc.start)`)
 }
 
 class TypeSection {
@@ -53,9 +53,20 @@ vec(element) =>
     element{length}
 
 
+# Uninterpreted bytes.
+ByteString(size) => bytechar{size} |> `lambda x: b''.join(x)`
+bytechar = b/[\x00-\xFF]/
+
+
 # Names.
 Name = vec(bytechar) |> `lambda x: b''.join(x).decode('utf8')`
-bytechar = b/[\x00-\xFF]/
+
+
+class LocatedName {
+    start: `_pos`
+    name: Name
+    end: `_pos`
+}
 
 
 # Numbers.
