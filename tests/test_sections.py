@@ -8,15 +8,15 @@ def test_custom_section():
         body=b'\x12\x34\x56',
     )
 
-    doc = Buffer().write_custom_section(expected).getvalue()
-    assert doc == b'\x00\x08\x04test\x12\x34\x56'
+    contents = Buffer().write_custom_section(expected).getvalue()
+    assert contents == b'\x00\x08\x04test\x12\x34\x56'
 
-    received = parser.CustomSection.parse(doc)
+    received = parser.CustomSection.parse(contents)
     assert received == expected
 
 
 def test_type_section():
-    expected = [
+    expected = parser.TypeSection([
         parser.FuncType(
             params=['i32'],
             results=['i64'],
@@ -29,8 +29,27 @@ def test_type_section():
             params=[],
             results=[],
         ),
-    ]
+    ])
 
-    doc = Buffer().write_type_section(expected).getvalue()
-    received = parser.TypeSection.parse(doc)
-    assert received.func_types == expected
+    contents = Buffer().write_type_section(expected).getvalue()
+    received = parser.TypeSection.parse(contents)
+    assert received == expected
+
+
+def test_function_section():
+    expected = parser.FunctionSection([0, 1, 2, 3, 2 ** 31 - 1, 3, 0, 2, 0, 1, 0])
+    contents = Buffer().write_function_section(expected).getvalue()
+    received = parser.FunctionSection.parse(contents)
+    assert received == expected
+
+
+def test_code_section():
+    expected = parser.CodeSection([
+        parser.CodeEntry(
+            locals=[],
+            expression=[parser.Nop(), parser.Nop()],
+        ),
+    ])
+    contents = Buffer().write_code_section(expected).getvalue()
+    received = parser.CodeSection.parse(contents)
+    assert received == expected

@@ -13,6 +13,36 @@ class Module {
 
     import_section: ImportSection?
     custom3: CustomSection*
+
+    function_section: FunctionSection?
+    custom4: CustomSection*
+
+    table_section: TableSection?
+    custom5: CustomSection*
+
+    memory_section: MemorySection?
+    custom6: CustomSection*
+
+    global_section: GlobalSection?
+    custom7: CustomSection*
+
+    export_section: ExportSection?
+    custom8: CustomSection*
+
+    start_section: StartSection?
+    custom9: CustomSection*
+
+    element_section: ElementSection?
+    custom10: CustomSection*
+
+    data_count_section: DataCountSection?
+    custom11: CustomSection*
+
+    code_section: CodeSection?
+    custom12: CustomSection*
+
+    data_section: DataSection?
+    custom13: CustomSection*
 }
 
 
@@ -30,12 +60,80 @@ class CustomSection {
 class TypeSection {
     let id: 0x01
     let size: u32
-    func_types: vec(FuncType)
+    function_types: vec(FuncType)
 }
 
 class ImportSection {
     let id: 0x02
+    let size: u32
     imports: vec(Import)
+}
+
+class FunctionSection {
+    let id: 0x03
+    let size: u32
+    type_indexes: vec(u32)
+}
+
+class TableSection {
+    let id: 0x04
+    let size: u32
+    table_types: vec(TableType)
+}
+
+class MemorySection {
+    let id: 0x05
+    let size: u32
+    memory_types: vec(MemoryType)
+}
+
+class GlobalSection {
+    let id: 0x06
+    let size: u32
+    globals: vec(Global)
+}
+
+class ExportSection {
+    let id: 0x07
+    let size: u32
+    exports: vec(Export)
+}
+
+class StartSection {
+    let id: 0x08
+    let size: u32
+    index: u32
+}
+
+class ElementSection {
+    let id: 0x09
+    let size: u32
+    segments: vec(ElementSegment)
+}
+
+class DataCountSection {
+    let id: 0x0C
+    let size: u32
+    count: Opt(u32 where `lambda _: size > 0`)
+}
+
+class CodeSection {
+    let id: 0x0A
+    let size: u32
+    entries: vec(CodeEntry)
+}
+
+class DataSection {
+    let id: 0x0B
+    let size: u32
+    segments: vec(DefaultDataSegment | PassiveDataSegment | ActiveDataSegment)
+}
+
+
+# Globals.
+class Global {
+    type: GlobalType
+    initializer: Expression
 }
 
 
@@ -43,10 +141,8 @@ class ImportSection {
 class Import {
     module: Name
     name: Name
-    descriptor: ImportDescriptor
+    descriptor: ImportFunc | ImportTable | ImportMemory | ImportGlobal
 }
-
-ImportDescriptor = ImportFunc | ImportTable | ImportMemory | ImportGlobal
 
 class ImportFunc {
     let id: 0x00
@@ -55,12 +151,12 @@ class ImportFunc {
 
 class ImportTable {
     let id: 0x01
-    table_type: TableType
+    type: TableType
 }
 
 class ImportMemory {
     let id: 0x02
-    limits: Limits
+    type: MemoryType
 }
 
 class ImportGlobal {
@@ -69,10 +165,115 @@ class ImportGlobal {
 }
 
 
-# Tables.
-class TableType {
-    elements: ReferenceType
-    limits: Limits
+# Exports.
+class Export {
+    name: Name
+    descriptor: ExportFunc | ExportTable | ExportMemory | ExportGlobal
+}
+
+class ExportFunc {
+    let id: 0x00
+    index: u32
+}
+
+class ExportTable {
+    let id: 0x01
+    index: u32
+}
+
+class ExportMemory {
+    let id: 0x02
+    index: u32
+}
+
+class ExportGlobal {
+    let id: 0x03
+    index: u32
+}
+
+
+# Element segments.
+ElementSegment = (
+    DefaultSegment
+    | PassiveFuncRefSegment
+    | ActiveFuncRefSegment
+    | DeclarativeFuncRefSegment
+    | DefaultExpressionSegment
+    | PassiveExpressionSegment
+    | ActiveExpressionSegment
+    | DeclarativeExpressionSegment
+)
+
+class DefaultSegment {
+    let id: 0x00
+    offset: Expression
+    function_indexes: vec(u32)
+}
+
+class PassiveFuncRefSegment {
+    let id: 0x01
+    type: 0x00 >> `'funcref'`
+    function_indexes: vec(u32)
+}
+
+class ActiveFuncRefSegment {
+    let id: 0x02
+    table_index: u32
+    offset: Expression
+    type: 0x00 >> `'funcref'`
+    function_indexes: vec(u32)
+}
+
+class DeclarativeFuncRefSegment {
+    let id: 0x03
+    type: 0x00 >> `'funcref'`
+    function_indexes: vec(u32)
+}
+
+class DefaultExpressionSegment {
+    let id: 0x04
+    offset: Expression
+    initializers: vec(Expression)
+}
+
+class PassiveExpressionSegment {
+    let id: 0x05
+    type: ReferenceType
+    initializers: vec(Expression)
+}
+
+class ActiveExpressionSegment {
+    let id: 0x06
+    table_index: u32
+    offset: Expression
+    type: ReferenceType
+    initializers: vec(Expression)
+}
+
+class DeclarativeExpressionSegment {
+    let id: 0x07
+    type: ReferenceType
+    initializers: vec(Expression)
+}
+
+
+# Data segments.
+class DefaultDataSegment {
+    let id: 0x00
+    offset: Expression
+    contents: ByteVector
+}
+
+class PassiveDataSegment {
+    let id: 0x01
+    contents: ByteVector
+}
+
+class ActiveDataSegment {
+    let id: 0x02
+    index: u32
+    offset: Expression
+    contents: ByteVector
 }
 
 
@@ -104,7 +305,9 @@ class GlobalType {
     modifier: 0x00 >> `'const'` | 0x01 >> `'var'`
 }
 
-ValueType = NumberType | ReferenceType
+class MemoryType {
+    limits: Limits
+}
 
 NumberType = (
     0x7F >> `'i32'`
@@ -113,10 +316,17 @@ NumberType = (
     | 0x7C >> `'f64'`
 )
 
+class TableType {
+    type: ReferenceType
+    limits: Limits
+}
+
 ReferenceType = (
     0x70 >> `'funcref'`
     | 0x6F >> `'externref'`
 )
+
+ValueType = NumberType | ReferenceType
 
 
 # Vectors.
@@ -127,6 +337,7 @@ vec(element) =>
 
 # Uninterpreted bytes.
 ByteString(size) => bytechar{size} |> `lambda x: b''.join(x)`
+ByteVector => vec(bytechar) |> `lambda x: b''.join(x)`
 bytechar = b/[\x00-\xFF]/
 
 
@@ -182,3 +393,33 @@ def decode_unsigned_int(bytes):
 
     return result
 ```
+
+
+# Code.
+class CodeEntry {
+    let size: u32
+    locals: vec(Locals)
+    expression: Expression
+}
+
+class Locals {
+    count: u32
+    type: ValueType
+}
+
+
+# Instructions.
+Expression => Instruction* << 0x0B
+
+Instruction = (
+    Unreachable
+    | Nop
+)
+
+class Unreachable {
+    let id: 0x00
+}
+
+class Nop {
+    let id: 0x01
+}

@@ -19,11 +19,56 @@ class Buffer:
         self._buffer.write(value)
         return self
 
+    def write_code_section(self, code_section):
+        stage = Buffer()
+        stage.write_u32(len(code_section.entries))
+        for entry in code_section.entries:
+            stage.write_code_entry(entry)
+        return self._write_staged_section(code_section.id, stage)
+
+    def write_code_entry(self, entry):
+        stage = Buffer()
+        stage.write_u32(len(entry.locals))
+
+        for locals in entry.locals:
+            stage.write_u32(locals.count)
+            stage.write_type(locals.type)
+
+        stage.write_expression(entry.expression)
+        staged_bytes = stage.getvalue()
+        self.write_u32(len(staged_bytes))
+        self.write_bytes(staged_bytes)
+        return self
+
     def write_custom_section(self, custom_section):
         stage = Buffer()
         stage.write_name(custom_section.name)
         stage.write_bytes(custom_section.body)
-        return self._write_staged_section(0x00, stage)
+        self._write_staged_section(custom_section.id, stage)
+        return self
+
+    def write_expression(self, expression):
+        for instr in expression:
+            self.write_instruction(instr)
+        self.write_byte(0x0B)
+
+    def write_f32(self, value):
+        self.write_bytes(struct.pack('<f', value))
+        return self
+
+    def write_f64(self, value):
+        self.write_bytes(struct.pack('<d', value))
+        return self
+
+    def write_function_section(self, function_section):
+        stage = Buffer()
+        stage.write_u32(len(function_section.type_indexes))
+
+        for index in function_section.type_indexes:
+            stage.write_u32(index)
+
+        self._write_staged_section(function_section.id, stage)
+        return self
 
     def write_i32(self, value):
         assert isinstance(value, int)
@@ -41,12 +86,8 @@ class Buffer:
         self._write_signed_integer(value)
         return self
 
-    def write_f32(self, value):
-        self.write_bytes(struct.pack('<f', value))
-        return self
-
-    def write_f64(self, value):
-        self.write_bytes(struct.pack('<d', value))
+    def write_instruction(self, instr):
+        self.write_byte(instr.id)
         return self
 
     def write_name(self, name):
@@ -83,14 +124,14 @@ class Buffer:
 
             return self
 
-    def write_type_section(self, func_types):
+    def write_type_section(self, type_section):
         stage = Buffer()
-        stage.write_u32(len(func_types))
+        stage.write_u32(len(type_section.function_types))
 
-        for func_type in func_types:
+        for func_type in type_section.function_types:
             stage.write_type(func_type)
 
-        return self._write_staged_section(0x01, stage)
+        return self._write_staged_section(type_section.id, stage)
 
     def write_u32(self, value):
         assert isinstance(value, int)
