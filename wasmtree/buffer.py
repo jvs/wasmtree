@@ -20,11 +20,13 @@ class Buffer:
         return self
 
     def write_code_section(self, code_section):
-        stage = Buffer()
-        stage.write_u32(len(code_section.entries))
-        for entry in code_section.entries:
-            stage.write_code_entry(entry)
-        return self._write_staged_section(code_section.id, stage)
+        if code_section and code_section.entries:
+            stage = Buffer()
+            stage.write_u32(len(code_section.entries))
+            for entry in code_section.entries:
+                stage.write_code_entry(entry)
+            self._write_staged_section(code_section.id, stage)
+        return self
 
     def write_code_entry(self, entry):
         stage = Buffer()
@@ -40,11 +42,32 @@ class Buffer:
         self.write_bytes(staged_bytes)
         return self
 
+    def write_custom_sections(self, custom_sections):
+        if custom_sections:
+            for custom_section in custom_sections:
+                self.write_custom_section(custom_section)
+        return self
+
     def write_custom_section(self, custom_section):
         stage = Buffer()
         stage.write_name(custom_section.name)
         stage.write_bytes(custom_section.body)
         self._write_staged_section(custom_section.id, stage)
+        return self
+
+    def write_export(self, export):
+        self.write_name(export.name)
+        self.write_byte(export.descriptor.id)
+        self.write_u32(export.descriptor.index)
+        return self
+
+    def write_export_section(self, export_section):
+        if export_section and export_section.exports:
+            stage = Buffer()
+            stage.write_u32(len(export_section.exports))
+            for export in export_section.exports:
+                stage.write_export(export)
+            self._write_staged_section(export_section.id, stage)
         return self
 
     def write_expression(self, expression):
@@ -61,13 +84,12 @@ class Buffer:
         return self
 
     def write_function_section(self, function_section):
-        stage = Buffer()
-        stage.write_u32(len(function_section.type_indexes))
-
-        for index in function_section.type_indexes:
-            stage.write_u32(index)
-
-        self._write_staged_section(function_section.id, stage)
+        if function_section and function_section.type_indexes:
+            stage = Buffer()
+            stage.write_u32(len(function_section.type_indexes))
+            for index in function_section.type_indexes:
+                stage.write_u32(index)
+            self._write_staged_section(function_section.id, stage)
         return self
 
     def write_i32(self, value):
@@ -87,7 +109,33 @@ class Buffer:
         return self
 
     def write_instruction(self, instr):
-        self.write_byte(instr.id)
+        instr_id = instr.id
+        self.write_byte(instr_id)
+
+        if instr_id == 0x20:
+            self.write_u32(instr.index)
+
+        elif instr_id == 0x41:
+            self.write_i32(instr.number)
+
+        return self
+
+    def write_module(self, module):
+        self.write_bytes(module.magic)
+        self.write_bytes(module.version)
+        self.write_custom_sections(module.custom1)
+        self.write_type_section(module.type_section)
+        self.write_custom_sections(module.custom2)
+        # TODO: import_section
+        self.write_function_section(module.function_section)
+        self.write_custom_sections(module.custom4)
+        # TODO: table_section, memory_section, global_section
+        self.write_export_section(module.export_section)
+        self.write_custom_sections(module.custom8)
+        # TODO: start_section, element_section, data_count_section
+        self.write_code_section(module.code_section)
+        self.write_custom_sections(module.custom12)
+        # TODO: data_seciont
         return self
 
     def write_name(self, name):
@@ -125,13 +173,13 @@ class Buffer:
             return self
 
     def write_type_section(self, type_section):
-        stage = Buffer()
-        stage.write_u32(len(type_section.function_types))
-
-        for func_type in type_section.function_types:
-            stage.write_type(func_type)
-
-        return self._write_staged_section(type_section.id, stage)
+        if type_section and type_section.function_types:
+            stage = Buffer()
+            stage.write_u32(len(type_section.function_types))
+            for func_type in type_section.function_types:
+                stage.write_type(func_type)
+            self._write_staged_section(type_section.id, stage)
+        return self
 
     def write_u32(self, value):
         assert isinstance(value, int)

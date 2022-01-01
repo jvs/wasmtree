@@ -1,6 +1,7 @@
 import wasmer
 
 from wasmtree import parser
+from wasmtree.buffer import Buffer
 
 
 def test_simple_module():
@@ -15,6 +16,8 @@ def test_simple_module():
     ''')
 
     module = parser.Module.parse(contents)
+    received = Buffer().write_module(module).getvalue()
+    assert received == contents
 
     assert module.type_section == parser.TypeSection([
         parser.FuncType(['i32'], ['i32']),
