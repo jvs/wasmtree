@@ -417,6 +417,9 @@ Expression => Instruction* << 0x0B
 Instruction = (
     Unreachable
     | Nop
+    | GetLocal
+    | ConstI32
+    | AddI32
 )
 
 class Unreachable {
@@ -425,6 +428,20 @@ class Unreachable {
 
 class Nop {
     let id: 0x01
+}
+
+class GetLocal {
+    let id: 0x20
+    index: u32
+}
+
+class ConstI32 {
+    let id: 0x41
+    number: i32
+}
+
+class AddI32 {
+    let id: 0x6A
 }
 
 """
@@ -5844,6 +5861,36 @@ def _try_Instruction(_text, _pos):
         if (farthest_pos10 < _pos):
             farthest_pos10 = _pos
             farthest_err10 = _result
+        _pos = backtrack23
+        # Option 3:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_GetLocal, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos10 < _pos):
+            farthest_pos10 = _pos
+            farthest_err10 = _result
+        _pos = backtrack23
+        # Option 4:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_ConstI32, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos10 < _pos):
+            farthest_pos10 = _pos
+            farthest_err10 = _result
+        _pos = backtrack23
+        # Option 5:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_AddI32, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos10 < _pos):
+            farthest_pos10 = _pos
+            farthest_err10 = _result
         _pos = farthest_pos10
         _result = farthest_err10
         break
@@ -5854,7 +5901,7 @@ def _parse_Instruction(text, pos=0, fullparse=True):
     return _run(text, pos, _try_Instruction, fullparse)
 
 Instruction = Rule('Instruction', _parse_Instruction, """
-    Instruction = Unreachable | Nop
+    Instruction = Unreachable | Nop | GetLocal | ConstI32 | AddI32
 """)
 def _raise_error586(_text, _pos):
     if (len(_text) <= _pos):
@@ -5867,7 +5914,7 @@ def _raise_error586(_text, _pos):
         title = f'Error on line {line}, column {col}:\n{excerpt}\n'
     details = (
     "Failed to parse the 'Instruction' rule, at the expression:\n"
-    '    Unreachable | Nop\n\n'
+    '    Unreachable | Nop | GetLocal | ConstI32 | AddI32\n\n'
     'Unexpected input'
     )
     raise ParseError((title + details), _pos, line, col)
@@ -5904,7 +5951,7 @@ def _try_Unreachable(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error592
+            _result = _raise_error595
             _status = False
         # End Byte
         if not (_status):
@@ -5916,7 +5963,7 @@ def _try_Unreachable(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error592(_text, _pos):
+def _raise_error595(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5964,7 +6011,7 @@ def _try_Nop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error596
+            _result = _raise_error599
             _status = False
         # End Byte
         if not (_status):
@@ -5976,7 +6023,7 @@ def _try_Nop(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error596(_text, _pos):
+def _raise_error599(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5989,6 +6036,202 @@ def _raise_error596(_text, _pos):
     "Failed to parse the 'Nop' rule, at the expression:\n"
     '    0x1\n\n'
     'Expected to match the byte value 0x1'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class GetLocal(Node):
+    """
+    class GetLocal {
+        let id: 0x20
+        index: u32
+    }
+    """
+    _fields = ('index',)
+
+    id = 0x20
+
+    def __init__(self, index):
+        Node.__init__(self)
+        self.index = index
+
+    def __repr__(self):
+        return f'GetLocal(index={self.index!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_GetLocal, fullparse)
+
+
+def _try_GetLocal(_text, _pos):
+    # Begin Seq
+    start_pos48 = _pos
+    while True:
+        # Begin Byte
+        # 0x20
+        if (_pos < len(_text)) and (_text[_pos] == 32):
+            _result = 32
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error603
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_u32, _pos))
+        # End Ref
+        if not (_status):
+            break
+        index = _result
+        _result = GetLocal(index)
+        _result._metadata.position_info = (start_pos48, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error603(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'GetLocal' rule, at the expression:\n"
+    '    0x20\n\n'
+    'Expected to match the byte value 0x20'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class ConstI32(Node):
+    """
+    class ConstI32 {
+        let id: 0x41
+        number: i32
+    }
+    """
+    _fields = ('number',)
+
+    id = 0x41
+
+    def __init__(self, number):
+        Node.__init__(self)
+        self.number = number
+
+    def __repr__(self):
+        return f'ConstI32(number={self.number!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_ConstI32, fullparse)
+
+
+def _try_ConstI32(_text, _pos):
+    # Begin Seq
+    start_pos49 = _pos
+    while True:
+        # Begin Byte
+        # 0x41
+        if (_pos < len(_text)) and (_text[_pos] == 65):
+            _result = 65
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error609
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_i32, _pos))
+        # End Ref
+        if not (_status):
+            break
+        number = _result
+        _result = ConstI32(number)
+        _result._metadata.position_info = (start_pos49, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error609(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'ConstI32' rule, at the expression:\n"
+    '    0x41\n\n'
+    'Expected to match the byte value 0x41'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class AddI32(Node):
+    """
+    class AddI32 {
+        let id: 0x6a
+    }
+    """
+    _fields = ()
+
+    id = 0x6a
+
+    def __init__(self):
+        Node.__init__(self)
+
+    def __repr__(self):
+        return f'AddI32()'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_AddI32, fullparse)
+
+
+def _try_AddI32(_text, _pos):
+    # Begin Seq
+    start_pos50 = _pos
+    while True:
+        # Begin Byte
+        # 0x6a
+        if (_pos < len(_text)) and (_text[_pos] == 106):
+            _result = 106
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error615
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        _result = AddI32()
+        _result._metadata.position_info = (start_pos50, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error615(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'AddI32' rule, at the expression:\n"
+    '    0x6a\n\n'
+    'Expected to match the byte value 0x6a'
     )
     raise ParseError((title + details), _pos, line, col)
 

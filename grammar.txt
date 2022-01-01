@@ -414,6 +414,9 @@ Expression => Instruction* << 0x0B
 Instruction = (
     Unreachable
     | Nop
+    | GetLocal
+    | ConstI32
+    | AddI32
 )
 
 class Unreachable {
@@ -422,4 +425,18 @@ class Unreachable {
 
 class Nop {
     let id: 0x01
+}
+
+class GetLocal {
+    let id: 0x20
+    index: u32
+}
+
+class ConstI32 {
+    let id: 0x41
+    number: i32
+}
+
+class AddI32 {
+    let id: 0x6A
 }
