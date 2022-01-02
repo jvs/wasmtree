@@ -476,9 +476,42 @@ Instruction = (
     | f64_gt
     | f64_le
     | f64_ge
-
+    | i32_clz
+    | i32_ctz
+    | i32_popcnt
     | i32_add
-
+    | i32_sub
+    | i32_mul
+    | i32_div_s
+    | i32_div_u
+    | i32_rem_s
+    | i32_rem_u
+    | i32_and
+    | i32_or
+    | i32_xor
+    | i32_shl
+    | i32_shr_s
+    | i32_shr_u
+    | i32_rotl
+    | i32_rotr
+    | i64_clz
+    | i64_ctz
+    | i64_popcnt
+    | i64_add
+    | i64_sub
+    | i64_mul
+    | i64_div_s
+    | i64_div_u
+    | i64_rem_s
+    | i64_rem_u
+    | i64_and
+    | i64_or
+    | i64_xor
+    | i64_shl
+    | i64_shr_s
+    | i64_shr_u
+    | i64_rotl
+    | i64_rotr
     | memory_init
     | data_drop
     | memory_copy
@@ -631,7 +664,43 @@ class f64_gt { let id: 0x64 }
 class f64_le { let id: 0x65 }
 class f64_ge { let id: 0x66 }
 
+class i32_clz { let id: 0x67 }
+class i32_ctz { let id: 0x68 }
+class i32_popcnt { let id: 0x69 }
 class i32_add { let id: 0x6A }
+class i32_sub { let id: 0x6B }
+class i32_mul { let id: 0x6C }
+class i32_div_s { let id: 0x6D }
+class i32_div_u { let id: 0x6E }
+class i32_rem_s { let id: 0x6F }
+class i32_rem_u { let id: 0x70 }
+class i32_and { let id: 0x71 }
+class i32_or { let id: 0x72 }
+class i32_xor { let id: 0x73 }
+class i32_shl { let id: 0x74 }
+class i32_shr_s { let id: 0x75 }
+class i32_shr_u { let id: 0x76 }
+class i32_rotl { let id: 0x77 }
+class i32_rotr { let id: 0x78 }
+
+class i64_clz { let id: 0x79 }
+class i64_ctz { let id: 0x7A }
+class i64_popcnt { let id: 0x7B }
+class i64_add { let id: 0x7C }
+class i64_sub { let id: 0x7D }
+class i64_mul { let id: 0x7E }
+class i64_div_s { let id: 0x7F }
+class i64_div_u { let id: 0x80 }
+class i64_rem_s { let id: 0x81 }
+class i64_rem_u { let id: 0x82 }
+class i64_and { let id: 0x83 }
+class i64_or { let id: 0x84 }
+class i64_xor { let id: 0x85 }
+class i64_shl { let id: 0x86 }
+class i64_shr_s { let id: 0x87 }
+class i64_shr_u { let id: 0x88 }
+class i64_rotl { let id: 0x89 }
+class i64_rotr { let id: 0x8A }
 
 class memory_init {
     let id: 0xFC
