@@ -105,7 +105,7 @@ class Builder:
         self.function_annotations.append(type_index)
         self.function_bodies.append(entry)
 
-        export_as = self.export_as(export_as)
+        export_as = self._export_as(export_as)
         if export_as is not None:
             self.export_function(export_as, function_index)
 
@@ -119,114 +119,38 @@ class Builder:
 
         return (function_index, element_index)
 
-    def add_table(self, reference_type, limits, export_as=None):
-        export_as = self.export_as(export_as)
-        table_index = len(self.tables)
-        self.tables.append(self.table_type(reference_type, limits))
-
-        export_as = self.export_as(export_as)
-        if export_as is not None:
-            self.export_table(export_as, table_index)
-
-        return table_index
-
-    def add_memory(self, limits, export_as=None):
-        memory_index = len(self.memories)
-        self.memories.append(self.memory_type(limits))
-
-        export_as = self.export_as(export_as)
-        if export_as is not None:
-            self.export_memory(export_as, memory_index)
-
-        return memory_index
-
     def add_global(self, modifier, value_type, initializer, export_as=None):
         global_type = self.global_type(modifier, value_type)
         initializer = self.expression(initializer)
         global_index = len(self.globals)
         self.globals.append(parser.Global(global_type, initializer))
 
-        export_as = self.export_as(export_as)
+        export_as = self._export_as(export_as)
         if export_as is not None:
             self.export_global(export_as, global_index)
 
         return global_index
 
-    def export_as(self, export_as):
-        if export_as is not None and not isinstance(export_as, str):
-            raise Exception(
-                'The export_as argument must be either None or a str.'
-                f' Received: {type(export_as)}.'
-            )
-        return export_as
+    def add_memory(self, limits, export_as=None):
+        memory_index = len(self.memories)
+        self.memories.append(self.memory_type(limits))
 
-    def _validate_export(self, name, index, prefix=''):
-        if not isinstance(name, str):
-            raise TypeError(
-                'The name argument must be a str.'
-                f' Received: {type(name)}.'
-            )
+        export_as = self._export_as(export_as)
+        if export_as is not None:
+            self.export_memory(export_as, memory_index)
 
-        if not isinstance(table_index, int):
-            raise TypeError(
-                f'The {prefix}index argument must be an int.'
-                f' Received {type(index)}.'
-            )
+        return memory_index
 
-    def export_function(self, name, function_index):
-        self._validate_export(name, function_index, prefix='function_')
-        self.exports.append(parser.ExportFunc(function_index))
+    def add_table(self, reference_type, limits, export_as=None):
+        export_as = self._export_as(export_as)
+        table_index = len(self.tables)
+        self.tables.append(self.table_type(reference_type, limits))
 
-    def export_table(self, name, table_index):
-        self._validate_export(name, table_index, prefix='table_')
-        self.exports.append(parser.ExportTable(table_index))
+        export_as = self._export_as(export_as)
+        if export_as is not None:
+            self.export_table(export_as, table_index)
 
-    def export_memory(self, name, memory_index):
-        self._validate_export(name, memory_index, prefix='memory_')
-        self.exports.append(parser.ExportMemory(memory_index))
-
-    def export_global(self, name, global_index):
-        self._validate_export(name, global_index, prefix='global_')
-        self.exports.append(parser.ExportGlobal(global_index))
-
-    def expression(self, expression):
-        if not isinstance(expression, list):
-            expression = [expression]
-        return [self.instruction(x) for x in expression]
-
-    def function_type(self, parameter_types, result_types):
-        if not isinstance(parameter_types, (list, str, tuple)):
-            raise TypeError(
-                f'Expected list, tuple, or str. Received: {type(parameter_types)}.'
-            )
-
-        if not isinstance(result_types, (list, str, tuple)):
-            raise TypeError(
-                f'Expected list, tuple, or str. Received: {type(result_types)}.'
-            )
-
-        if isinstance(parameter_types, str):
-            parameter_types = [parameter_types]
-
-        if isinstance(result_types, str):
-            result_types = [result_types]
-
-        assert isinstance(parameter_types, (list, tuple))
-        assert isinstance(result_types, (list, tuple))
-
-        for x in itertools.chain(parameter_types, result_types):
-            if not isinstance(x, str):
-                raise TypeError(
-                    f'Expected list of str. Received element: {type(x)}.'
-                )
-
-        return parser.FunctionType(
-            parameter_types=parameter_types,
-            result_types=result_types,
-        )
-
-    def function_type_index(self, function_type):
-        return self.function_types_map.get(function_type, -1)
+        return table_index
 
     def build_module(self):
         return parser.Module(
@@ -267,28 +191,115 @@ class Builder:
             custom13=self.trailing_custom_sections,
         )
 
+    def export_function(self, name, function_index):
+        self._validate_export(name, function_index, prefix='function_')
+        self.exports.append(parser.ExportFunc(function_index))
+
+    def export_global(self, name, global_index):
+        self._validate_export(name, global_index, prefix='global_')
+        self.exports.append(parser.ExportGlobal(global_index))
+
+    def export_memory(self, name, memory_index):
+        self._validate_export(name, memory_index, prefix='memory_')
+        self.exports.append(parser.ExportMemory(memory_index))
+
+    def export_table(self, name, table_index):
+        self._validate_export(name, table_index, prefix='table_')
+        self.exports.append(parser.ExportTable(table_index))
+
+    def expression(self, expression):
+        if not isinstance(expression, list):
+            expression = [expression]
+        return [self.instruction(x) for x in expression]
+
+    def function_type(self, parameter_types, result_types):
+        if not isinstance(parameter_types, (list, str, tuple)):
+            raise TypeError(
+                f'Expected list, tuple, or str. Received: {type(parameter_types)}.'
+            )
+
+        if not isinstance(result_types, (list, str, tuple)):
+            raise TypeError(
+                f'Expected list, tuple, or str. Received: {type(result_types)}.'
+            )
+
+        if isinstance(parameter_types, str):
+            parameter_types = [parameter_types]
+
+        if isinstance(result_types, str):
+            result_types = [result_types]
+
+        assert isinstance(parameter_types, (list, tuple))
+        assert isinstance(result_types, (list, tuple))
+
+        for x in itertools.chain(parameter_types, result_types):
+            if not isinstance(x, str):
+                raise TypeError(
+                    f'Expected list of str. Received element: {type(x)}.'
+                )
+
+        return parser.FunctionType(
+            parameter_types=parameter_types,
+            result_types=result_types,
+        )
+
+    def function_type_index(self, function_type):
+        return self.function_types_map.get(function_type, -1)
+
+    def global_type(self, modifier, value_type):
+        modifiers = ['const', 'var']
+        if not isinstance(modifier, str) or modifier not in modifiers:
+            raise TypeError(
+                f'Expected modifier in {modifiers}. Received: {modifier!r}.'
+            )
+        value_type = self.value_type(value_type)
+        return parser.GlobalType(value_type, modifier)
+
+    def instruction(self, instruction):
+        if not isinstance(instruction, (list, str, tuple)):
+            return instruction
+
+        if isinstance(instruction, str):
+            instruction = (instruction,)
+
+        assert isinstance(instruction, (list, tuple))
+        name, args = instruction
+
+        if not isinstance(name, str):
+            raise TypeError(
+                f'Expected instruction to be a str. Received: {type(name)}.'
+            )
+
+        class_name = name.replace('.', '_')
+
+        if not hasattr(parser, class_name):
+            raise TypeError(f'Unknown instruction: {instruction!r}.')
+
+        cls = getattr(parser, class_name)
+        return cls(*args)
+
+    def import_descriptor(self, module, name, descriptor):
+        self.imports.append(parser.Import(module, name, descriptor))
+
     def import_function(self, module, name, parameter_types, result_types):
         ft = self.function_type(parameter_types, result_types)
         self.add_function_type(ft)
         index = self.function_type_index(ft)
-        return self.import_(module, name, parser.ImportFunc(index))
+        return self.import_descriptor(module, name, parser.ImportFunc(index))
+
+    def import_global(self, module, name, modifier, value_type):
+        global_type = self.global_type(modifier, value_type)
+        self.import_descriptor(module, name, parser.ImportGlobal(global_type))
+
+    def import_memory(self, module, name, limits):
+        memory_type = self.memory_type(limits)
+        self.import_descriptor(module, name, parser.ImportMemory(memory_type))
 
     def import_table(self, module, name, reference_type, limits):
         reference_type = self.reference_type(reference_type)
         limits = self.limits(limits)
         table_type = parser.TableType(reference_type, limits)
-        self.import_(module, name, parser.ImportTable(table_type))
-
-    def import_memory(self, module, name, limits):
-        memory_type = self.memory_type(limits)
-        self.import_(module, name, parser.ImportMemory(memory_type))
-
-    def import_global(self, module, name, modifier, value_type):
-        global_type = self.global_type(modifier, value_type)
-        self.import_(module, name, parser.ImportGlobal(global_type))
-
-    def import_(self, module, name, descriptor):
-        self.imports.append(parser.Import(module, name, descriptor))
+        self.import_descriptor(module, name, parser.ImportTable(table_type))
 
     def limits(self, limits):
         if isinstance(limits, (list, tuple)):
@@ -338,15 +349,6 @@ class Builder:
             )
         return reference_type
 
-    def global_type(self, modifier, value_type):
-        modifiers = ['const', 'var']
-        if not isinstance(modifier, str) or modifier not in modifiers:
-            raise TypeError(
-                f'Expected modifier in {modifiers}. Received: {modifier!r}.'
-            )
-        value_type = self.value_type(value_type)
-        return parser.GlobalType(value_type, modifier)
-
     def table_type(self, reference_type, limits):
         reference_type = self.reference_type(reference_type)
         limits = self.limits(limits)
@@ -360,26 +362,23 @@ class Builder:
             )
         return value_type
 
-    def instruction(self, instruction):
-        if not isinstance(instruction, (list, str, tuple)):
-            return instruction
+    def _export_as(self, export_as):
+        if export_as is not None and not isinstance(export_as, str):
+            raise Exception(
+                'The export_as argument must be either None or a str.'
+                f' Received: {type(export_as)}.'
+            )
+        return export_as
 
-        if isinstance(instruction, str):
-            instruction = (instruction,)
-
-        assert isinstance(instruction, (list, tuple))
-        name, args = instruction
-
+    def _validate_export(self, name, index, prefix=''):
         if not isinstance(name, str):
             raise TypeError(
-                f'Expected instruction to be a str. Received: {type(name)}.'
+                'The name argument must be a str.'
+                f' Received: {type(name)}.'
             )
 
-        class_name = name.replace('.', '_')
-
-        if not hasattr(parser, class_name):
-            raise TypeError(f'Unknown instruction: {instruction!r}.')
-
-        cls = getattr(parser, class_name)
-        return cls(*args)
-
+        if not isinstance(table_index, int):
+            raise TypeError(
+                f'The {prefix}index argument must be an int.'
+                f' Received {type(index)}.'
+            )
