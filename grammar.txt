@@ -72,7 +72,7 @@ class ImportSection {
 class FunctionSection {
     let id: 0x03
     let size: u32
-    type_indexes: vec(u32)
+    type_indexes: vec(TypeIndex)
 }
 
 class TableSection {
@@ -102,7 +102,7 @@ class ExportSection {
 class StartSection {
     let id: 0x08
     let size: u32
-    index: u32
+    index: FunctionIndex
 }
 
 class ElementSection {
@@ -144,25 +144,10 @@ class Import {
     descriptor: ImportFunc | ImportTable | ImportMemory | ImportGlobal
 }
 
-class ImportFunc {
-    let id: 0x00
-    type: u32
-}
-
-class ImportTable {
-    let id: 0x01
-    type: TableType
-}
-
-class ImportMemory {
-    let id: 0x02
-    type: MemoryType
-}
-
-class ImportGlobal {
-    let id: 0x03
-    type: GlobalType
-}
+class ImportFunc { let id: 0x00; type: TypeIndex }
+class ImportTable { let id: 0x01; type: TableType }
+class ImportMemory { let id: 0x02; type: MemoryType }
+class ImportGlobal { let id: 0x03; type: GlobalType }
 
 
 # Exports.
@@ -171,25 +156,10 @@ class Export {
     descriptor: ExportFunc | ExportTable | ExportMemory | ExportGlobal
 }
 
-class ExportFunc {
-    let id: 0x00
-    index: u32
-}
-
-class ExportTable {
-    let id: 0x01
-    index: u32
-}
-
-class ExportMemory {
-    let id: 0x02
-    index: u32
-}
-
-class ExportGlobal {
-    let id: 0x03
-    index: u32
-}
+class ExportFunc { let id: 0x00; index: FunctionIndex }
+class ExportTable { let id: 0x01; index: TableIndex }
+class ExportMemory { let id: 0x02; index: MemoryIndex }
+class ExportGlobal { let id: 0x03; index: GlobalIndex }
 
 
 # Element segments.
@@ -207,27 +177,27 @@ ElementSegment = (
 class DefaultSegment {
     let id: 0x00
     offset: Expression
-    function_indexes: vec(u32)
+    function_indexes: vec(FunctionIndex)
 }
 
 class PassiveFuncRefSegment {
     let id: 0x01
     type: 0x00 >> `'funcref'`
-    function_indexes: vec(u32)
+    function_indexes: vec(FunctionIndex)
 }
 
 class ActiveFuncRefSegment {
     let id: 0x02
-    table_index: u32
+    table_index: TableIndex
     offset: Expression
     type: 0x00 >> `'funcref'`
-    function_indexes: vec(u32)
+    function_indexes: vec(FunctionIndex)
 }
 
 class DeclarativeFuncRefSegment {
     let id: 0x03
     type: 0x00 >> `'funcref'`
-    function_indexes: vec(u32)
+    function_indexes: vec(FunctionIndex)
 }
 
 class DefaultExpressionSegment {
@@ -244,7 +214,7 @@ class PassiveExpressionSegment {
 
 class ActiveExpressionSegment {
     let id: 0x06
-    table_index: u32
+    table_index: TableIndex
     offset: Expression
     type: ReferenceType
     initializers: vec(Expression)
@@ -271,7 +241,7 @@ class PassiveDataSegment {
 
 class ActiveDataSegment {
     let id: 0x02
-    index: u32
+    index: MemoryIndex
     offset: Expression
     contents: ByteVector
 }
@@ -293,6 +263,18 @@ class MinMaxLimits {
 
 
 # Types.
+DataIndex = u32
+FunctionIndex = u32
+ElementIndex = u32
+GlobalIndex = u32
+LabelIndex = u32
+LocalIndex = u32
+MemoryIndex = u32
+TableIndex = u32
+TypeIndex = u32
+
+BlockType = 0x40 >> `'empty'` | ValueType | SignedInt
+
 class FuncType {
     let id: 0x60
     params: vec(ValueType)
@@ -320,11 +302,7 @@ class TableType {
     limits: Limits
 }
 
-ReferenceType = (
-    0x70 >> `'funcref'`
-    | 0x6F >> `'externref'`
-)
-
+ReferenceType = 0x70 >> `'funcref'` | 0x6F >> `'externref'`
 ValueType = NumberType | ReferenceType
 
 
@@ -413,7 +391,28 @@ Expression => Instruction* << 0x0B
 Instruction = (
     unreachable
     | nop
+    | Block
+    | Loop
+    | If
+    | br
+    | br_if
+    | br_table
+    | ret
+    | call
+    | call_indirect
+    | ref_null
+    | ref_is_null
+    | ref_func
+    | drop
+    | select
+    | select_t
     | local_get
+    | local_set
+    | local_tee
+    | global_get
+    | global_set
+    | table_get
+    | table_set
     | i32_const
     | i64_const
     | f32_const
@@ -454,12 +453,84 @@ Instruction = (
     | f64_ge
 
     | i32_add
+
+    | table_init
+    | elem_drop
+    | table_copy
+    | table_grow
+    | table_size
+    | table_fill
 )
 
 class unreachable { let id: 0x00 }
 class nop { let id: 0x01 }
 
-class local_get { let id: 0x20; index: u32 }
+class Block {
+    let id: 0x02
+    type: BlockType
+    body: Expression
+}
+
+class Loop {
+    let id: 0x03
+    type: BlockType
+    body: Expression
+}
+
+class If {
+    let id: 0x04
+    type: BlockType
+    true_case: Instruction* << Peek(0x05 | 0x0B)
+    else_case: Opt(0x05 >> Instruction*) << 0x0B
+}
+
+class br {
+    let id: 0x0C
+    label: LabelIndex
+}
+
+class br_if {
+    let id: 0x0D
+    label: LabelIndex
+}
+
+class br_table {
+    let id: 0x0E
+    labels: vec(LabelIndex)
+    default: LabelIndex
+}
+
+class ret {
+    let id: 0x0F
+}
+
+class call {
+    let id: 0x10
+    function: FunctionIndex
+}
+
+class call_indirect {
+    let id: 0x11
+    type_index: TypeIndex
+    table_index: TableIndex
+}
+
+class ref_null { let id: 0xD0; type: ReferenceType }
+class ref_is_null { let id: 0xD1 }
+class ref_func { let id: 0xD2; function: FunctionIndex }
+
+class drop { let id: 0x1A }
+class select { let id: 0x1B }
+class select_t { let id: 0x1C; types: vec(ValueType) }
+
+class local_get { let id: 0x20; index: LocalIndex }
+class local_set { let id: 0x21; index: LocalIndex }
+class local_tee { let id: 0x22; index: LocalIndex }
+class global_get { let id: 0x23; index: GlobalIndex }
+class global_set { let id: 0x24; index: GlobalIndex }
+
+class table_get { let id: 0x25; index: TableIndex }
+class table_set { let id: 0x26; index: TableIndex }
 
 class i32_const { let id: 0x41; number: i32 }
 class i64_const { let id: 0x42; number: i64 }
@@ -505,3 +576,27 @@ class f64_le { let id: 0x65 }
 class f64_ge { let id: 0x66 }
 
 class i32_add { let id: 0x6A }
+
+class table_init {
+    let id: 0xFC
+    let code: 0x0C
+    element: ElementIndex
+    table: TableIndex
+}
+
+class elem_drop {
+    let id: 0xFC
+    let code: 0x0D
+    element: ElementIndex
+}
+
+class table_copy {
+    let id: 0xFC
+    let code: 0x0E
+    destination: TableIndex
+    source: TableIndex
+}
+
+class table_grow { let id: 0xFC; let code: 0x0F; table: TableIndex }
+class table_size { let id: 0xFC; let code: 0x10; table: TableIndex }
+class table_fill { let id: 0xFC; let code: 0x11; table: TableIndex }

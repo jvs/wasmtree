@@ -9,6 +9,15 @@ class Buffer:
     def getvalue(self):
         return self._buffer.getvalue()
 
+    def write_block_type(self, block_type):
+        if block_type == 'empty':
+            self.write_byte(0x40)
+        elif isinstance(block_type, str):
+            self.write_type(block_type)
+        else:
+            self._write_signed_integer(block_type)
+        return self
+
     def write_byte(self, value):
         assert isinstance(value, int) and 0 <= value < 256
         self.write_bytes(value.to_bytes(1, byteorder='big'))
@@ -237,7 +246,46 @@ class Buffer:
         instr_id = instr.id
         self.write_byte(instr_id)
 
-        if instr_id == 0x20:
+        if instr_id == 0x02 or instr_id == 0x03:
+            self.write_block_type(instr.type)
+            self.write_expression(instr.body)
+
+        elif instr_id == 0x04:
+            self.write_block_type(instr.type)
+            if instr.else_case is None:
+                self.write_expression(instr.true_case)
+            else:
+                for child in instr.true_case:
+                    self.write_instruction(child)
+                self.write_byte(0x05)
+                self.write_expression(instr.else_case)
+
+        elif instr_id == 0x0C or instr_id == 0x0D:
+            self.write_u32(instr.label)
+
+        elif instr_id == 0x0E:
+            self.write_vec_u32(instr.labels)
+            self.write_u32(instr.default)
+
+        elif instr_id == 0x10:
+            self.write_u32(instr.function)
+
+        elif instr_id == 0x11:
+            self.write_u32(instr.type_index)
+            self.write_u32(instr.table_index)
+
+        elif instr_id == 0xD0:
+            self.write_type(instr.type)
+
+        elif instr_id == 0xD1:
+            self.write_u32(instr.function)
+
+        elif instr_id == 0x1C:
+            self.write_u32(len(intr.types))
+            for type in intsr.types:
+                self.write_type(type)
+
+        elif 0x20 <= instr_id <= 0x26:
             self.write_u32(instr.index)
 
         elif instr_id == 0x41:
@@ -251,6 +299,23 @@ class Buffer:
 
         elif instr_id == 0x44:
             self.write_f64(instr.number)
+
+        elif instr_id == 0xFC:
+            self.write_u32(intr.code)
+
+            if instr.code == 0x0C:
+                self.write_u32(instr.element)
+                self.write_u32(instr.table)
+
+            elif instr.code == 0x0D:
+                self.write_u32(instr.element)
+
+            elif instr.code == 0x0E:
+                self.write_u32(instr.destination)
+                self.write_u32(instr.source)
+
+            elif 0x0F <= instr.code <= 0x11:
+                self.write_u32(instr.table)
 
         return self
 
