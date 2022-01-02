@@ -17,17 +17,17 @@ def test_custom_section():
 
 def test_type_section():
     expected = parser.TypeSection([
-        parser.FuncType(
-            params=['i32'],
-            results=['i64'],
+        parser.FunctionType(
+            parameter_types=['i32'],
+            result_types=['i64'],
         ),
-        parser.FuncType(
-            params=['i32', 'i64'],
-            results=['f32', 'f64'],
+        parser.FunctionType(
+            parameter_types=['i32', 'i64'],
+            result_types=['f32', 'f64'],
         ),
-        parser.FuncType(
-            params=[],
-            results=[],
+        parser.FunctionType(
+            parameter_types=[],
+            result_types=[],
         ),
     ])
 

@@ -446,15 +446,15 @@ class Buffer:
             self.write_byte(types[type])
             return self
 
-        if hasattr(type, 'params') and hasattr(type, 'results'):
+        if hasattr(type, 'parameter_types') and hasattr(type, 'result_types'):
             self.write_byte(0x60)
 
-            self.write_u32(len(type.params))
-            for param in type.params:
+            self.write_u32(len(type.parameter_types))
+            for param in type.parameter_types:
                 self.write_type(param)
 
-            self.write_u32(len(type.results))
-            for result in type.results:
+            self.write_u32(len(type.result_types))
+            for result in type.result_types:
                 self.write_type(result)
 
             return self

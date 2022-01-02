@@ -20,7 +20,7 @@ def test_simple_module():
     assert received == contents
 
     assert module.type_section == parser.TypeSection([
-        parser.FuncType(['i32'], ['i32']),
+        parser.FunctionType(['i32'], ['i32']),
     ])
 
     assert module.function_section == parser.FunctionSection([0])

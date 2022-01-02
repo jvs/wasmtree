@@ -63,7 +63,7 @@ class CustomSection {
 class TypeSection {
     let id: 0x01
     let size: u32
-    function_types: vec(FuncType)
+    function_types: vec(FunctionType)
 }
 
 class ImportSection {
@@ -278,10 +278,10 @@ TypeIndex = u32
 
 BlockType = 0x40 >> `'empty'` | ValueType | SignedInt
 
-class FuncType {
+class FunctionType {
     let id: 0x60
-    params: vec(ValueType)
-    results: vec(ValueType)
+    parameter_types: vec(ValueType)
+    result_types: vec(ValueType)
 }
 
 class GlobalType {
@@ -1888,7 +1888,7 @@ class TypeSection(Node):
     class TypeSection {
         let id: 0x1
         let size: u32
-        function_types: vec(FuncType)
+        function_types: vec(FunctionType)
     }
     """
     _fields = ('function_types',)
@@ -1931,8 +1931,8 @@ def _try_TypeSection(_text, _pos):
             break
         size = _result
         # Begin Call
-        # vec(FuncType)
-        func2 = _ParseFunction(_try_vec, (_try_FuncType,), ())
+        # vec(FunctionType)
+        func2 = _ParseFunction(_try_vec, (_try_FunctionType,), ())
         (_status, _result, _pos) = (yield (3, func2, _pos))
         # End Call
         if not (_status):
@@ -5199,32 +5199,32 @@ def _raise_error463(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-class FuncType(Node):
+class FunctionType(Node):
     """
-    class FuncType {
+    class FunctionType {
         let id: 0x60
-        params: vec(ValueType)
-        results: vec(ValueType)
+        parameter_types: vec(ValueType)
+        result_types: vec(ValueType)
     }
     """
-    _fields = ('params', 'results')
+    _fields = ('parameter_types', 'result_types')
 
     id = 0x60
 
-    def __init__(self, params, results):
+    def __init__(self, parameter_types, result_types):
         Node.__init__(self)
-        self.params = params
-        self.results = results
+        self.parameter_types = parameter_types
+        self.result_types = result_types
 
     def __repr__(self):
-        return f'FuncType(params={self.params!r}, results={self.results!r})'
+        return f'FunctionType(parameter_types={self.parameter_types!r}, result_types={self.result_types!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
-        return _run(text, pos, _try_FuncType, fullparse)
+        return _run(text, pos, _try_FunctionType, fullparse)
 
 
-def _try_FuncType(_text, _pos):
+def _try_FunctionType(_text, _pos):
     # Begin Seq
     start_pos39 = _pos
     while True:
@@ -5248,7 +5248,7 @@ def _try_FuncType(_text, _pos):
         # End Call
         if not (_status):
             break
-        params = _result
+        parameter_types = _result
         # Begin Call
         # vec(ValueType)
         func21 = _ParseFunction(_try_vec, (_try_ValueType,), ())
@@ -5256,8 +5256,8 @@ def _try_FuncType(_text, _pos):
         # End Call
         if not (_status):
             break
-        results = _result
-        _result = FuncType(params, results)
+        result_types = _result
+        _result = FunctionType(parameter_types, result_types)
         _result._metadata.position_info = (start_pos39, _pos)
         break
     # End Seq
@@ -5273,7 +5273,7 @@ def _raise_error470(_text, _pos):
         excerpt = _extract_excerpt(_text, _pos, col)
         title = f'Error on line {line}, column {col}:\n{excerpt}\n'
     details = (
-    "Failed to parse the 'FuncType' rule, at the expression:\n"
+    "Failed to parse the 'FunctionType' rule, at the expression:\n"
     '    0x60\n\n'
     'Expected to match the byte value 0x60'
     )

@@ -60,7 +60,7 @@ class CustomSection {
 class TypeSection {
     let id: 0x01
     let size: u32
-    function_types: vec(FuncType)
+    function_types: vec(FunctionType)
 }
 
 class ImportSection {
@@ -275,10 +275,10 @@ TypeIndex = u32
 
 BlockType = 0x40 >> `'empty'` | ValueType | SignedInt
 
-class FuncType {
+class FunctionType {
     let id: 0x60
-    params: vec(ValueType)
-    results: vec(ValueType)
+    parameter_types: vec(ValueType)
+    result_types: vec(ValueType)
 }
 
 class GlobalType {
