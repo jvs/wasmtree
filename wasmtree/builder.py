@@ -38,7 +38,7 @@ class Builder:
             f' Received: {block_type!r}.'
         )
 
-    def add_custom_section(self, name, body, postion='end'):
+    def add_custom_section(self, name, body, position='end'):
         if not isinstance(name, str):
             raise TypeError(f'Expected name to be a str. Received: {name!r}')
 
@@ -64,18 +64,6 @@ class Builder:
             )
 
         self.data_segments.append(parser.DefaultDataSegment(offset, bytestr))
-
-    def add_function_element(self, function_index):
-        element_index = len(self.function_element_indexes)
-        self.function_element_indexes.append(function_index)
-        return element_index
-
-    def add_function_type(self, function_type):
-        if function_type not in self.function_types_map:
-            self.function_types_map[function_type] = len(self.function_types)
-            self.function_types.append(function_type)
-
-        return self.function_types_map[function_type]
 
     def add_function(
             self,
@@ -119,6 +107,19 @@ class Builder:
 
         return (function_index, element_index)
 
+    def add_function_element(self, function_index):
+        element_index = len(self.function_element_indexes)
+        self.function_element_indexes.append(function_index)
+        return element_index
+
+    def add_function_type(self, function_type):
+        key = self._function_type_key(function_type)
+        if key not in self.function_types_map:
+            self.function_types_map[key] = len(self.function_types)
+            self.function_types.append(function_type)
+
+        return self.function_types_map[key]
+
     def add_global(self, modifier, value_type, initializer, export_as=None):
         global_type = self.global_type(modifier, value_type)
         initializer = self.expression(initializer)
@@ -154,7 +155,7 @@ class Builder:
 
     def build_module(self):
         return parser.Module(
-            types_section=parser.TypesSection(self.function_types),
+            type_section=parser.TypeSection(self.function_types),
             import_section=parser.ImportSection(self.imports),
             function_section=parser.FunctionSection(self.function_annotations),
             table_section=parser.TableSection(self.tables),
@@ -191,21 +192,24 @@ class Builder:
             custom13=self.trailing_custom_sections,
         )
 
+    def export(self, name, descriptor):
+        self.exports.append(parser.Export(name, descriptor))
+
     def export_function(self, name, function_index):
         self._validate_export(name, function_index, prefix='function_')
-        self.exports.append(parser.ExportFunc(function_index))
+        self.export(name, parser.ExportFunc(function_index))
 
     def export_global(self, name, global_index):
         self._validate_export(name, global_index, prefix='global_')
-        self.exports.append(parser.ExportGlobal(global_index))
+        self.export(name, parser.ExportGlobal(global_index))
 
     def export_memory(self, name, memory_index):
         self._validate_export(name, memory_index, prefix='memory_')
-        self.exports.append(parser.ExportMemory(memory_index))
+        self.export(name, parser.ExportMemory(memory_index))
 
     def export_table(self, name, table_index):
         self._validate_export(name, table_index, prefix='table_')
-        self.exports.append(parser.ExportTable(table_index))
+        self.export(name, parser.ExportTable(table_index))
 
     def expression(self, expression):
         if not isinstance(expression, list):
@@ -244,7 +248,8 @@ class Builder:
         )
 
     def function_type_index(self, function_type):
-        return self.function_types_map.get(function_type, -1)
+        key = self._function_type_key(function_type)
+        return self.function_types_map.get(key, -1)
 
     def global_type(self, modifier, value_type):
         modifiers = ['const', 'var']
@@ -263,7 +268,7 @@ class Builder:
             instruction = (instruction,)
 
         assert isinstance(instruction, (list, tuple))
-        name, args = instruction
+        name, args = instruction[0], instruction[1:]
 
         if not isinstance(name, str):
             raise TypeError(
@@ -370,6 +375,11 @@ class Builder:
             )
         return export_as
 
+    def _function_type_key(self, function_type):
+        params = tuple(function_type.parameter_types)
+        res = tuple(function_type.result_types)
+        return (params, res)
+
     def _validate_export(self, name, index, prefix=''):
         if not isinstance(name, str):
             raise TypeError(
@@ -377,7 +387,7 @@ class Builder:
                 f' Received: {type(name)}.'
             )
 
-        if not isinstance(table_index, int):
+        if not isinstance(index, int):
             raise TypeError(
                 f'The {prefix}index argument must be an int.'
                 f' Received {type(index)}.'

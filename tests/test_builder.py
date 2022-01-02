@@ -1,6 +1,6 @@
 import wasmer
 
-from wasmtree import Buffer, parser
+from wasmtree import Builder, Buffer, parser
 
 
 def test_simple_module():
@@ -13,10 +13,26 @@ def test_simple_module():
                 i32.add)
             (export "add_one" (func $add_one_f)))
     ''')
+    expected_module = parser.Module.parse(contents)
 
-    module = parser.Module.parse(contents)
-    received = Buffer().write_module(module).getvalue()
-    assert received == contents
+    builder = Builder()
+    builder.add_function(
+        parameter_types=['i32'],
+        result_types='i32',
+        local_types=[],
+        expression=[
+            ('local.get', 0),
+            ('i32.const', 1),
+            'i32.add',
+        ],
+        export_as='add_one',
+    )
+
+    builder.add_custom_section(
+        name=expected_module.custom12[0].name,
+        body=expected_module.custom12[0].body,
+    )
+    module = builder.build_module()
 
     assert module.type_section == parser.TypeSection([
         parser.FunctionType(['i32'], ['i32']),
@@ -38,3 +54,6 @@ def test_simple_module():
             ],
         ),
     ])
+
+    received = Buffer().write_module(module).getvalue()
+    assert received == contents
