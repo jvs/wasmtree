@@ -512,6 +512,72 @@ Instruction = (
     | i64_shr_u
     | i64_rotl
     | i64_rotr
+    | f32_abs
+    | f32_neg
+    | f32_ceil
+    | f32_floor
+    | f32_trunc
+    | f32_nearest
+    | f32_sqrt
+    | f32_add
+    | f32_sub
+    | f32_mul
+    | f32_div
+    | f32_min
+    | f32_max
+    | f32_copysign
+    | f64_abs
+    | f64_neg
+    | f64_ceil
+    | f64_floor
+    | f64_trunc
+    | f64_nearest
+    | f64_sqrt
+    | f64_add
+    | f64_sub
+    | f64_mul
+    | f64_div
+    | f64_min
+    | f64_max
+    | f64_copysign
+    | i32_wrap_i64
+    | i32_trunc_f32_s
+    | i32_trunc_f32_u
+    | i32_trunc_f64_s
+    | i32_trunc_f64_u
+    | i64_extend_i32_s
+    | i64_extend_i32_u
+    | i64_trunc_f32_s
+    | i64_trunc_f32_u
+    | i64_trunc_f64_s
+    | i64_trunc_f64_u
+    | f32_convert_i32_s
+    | f32_convert_i32_u
+    | f32_convert_i64_s
+    | f32_convert_i64_u
+    | f32_demote_f64
+    | f64_convert_i32_s
+    | f64_convert_i32_u
+    | f64_convert_i64_s
+    | f64_convert_i64_u
+    | f64_promote_f32
+    | i32_reinterpret_f32
+    | i64_reinterpret_f64
+    | f32_reinterpret_i32
+    | f64_reinterpret_i64
+    | i32_extend8_s
+    | i32_extend16_s
+    | i64_extend8_s
+    | i64_extend16_s
+    | i64_extend32_s
+    | i32_trunc_sat_f32_s
+    | i32_trunc_sat_f32_u
+    | i32_trunc_sat_f64_s
+    | i32_trunc_sat_f64_u
+    | i64_trunc_sat_f32_s
+    | i64_trunc_sat_f32_u
+    | i64_trunc_sat_f64_s
+    | i64_trunc_sat_f64_u
     | memory_init
     | data_drop
     | memory_copy
@@ -701,6 +767,77 @@ class i64_shr_s { let id: 0x87 }
 class i64_shr_u { let id: 0x88 }
 class i64_rotl { let id: 0x89 }
 class i64_rotr { let id: 0x8A }
+
+class f32_abs { let id: 0x8B }
+class f32_neg { let id: 0x8C }
+class f32_ceil { let id: 0x8D }
+class f32_floor { let id: 0x8E }
+class f32_trunc { let id: 0x8F }
+class f32_nearest { let id: 0x90 }
+class f32_sqrt { let id: 0x91 }
+class f32_add { let id: 0x92 }
+class f32_sub { let id: 0x93 }
+class f32_mul { let id: 0x94 }
+class f32_div { let id: 0x95 }
+class f32_min { let id: 0x96 }
+class f32_max { let id: 0x97 }
+class f32_copysign { let id: 0x98 }
+
+class f64_abs { let id: 0x99 }
+class f64_neg { let id: 0x9A }
+class f64_ceil { let id: 0x9B }
+class f64_floor { let id: 0x9C }
+class f64_trunc { let id: 0x9D }
+class f64_nearest { let id: 0x9E }
+class f64_sqrt { let id: 0x9F }
+class f64_add { let id: 0xA0 }
+class f64_sub { let id: 0xA1 }
+class f64_mul { let id: 0xA2 }
+class f64_div { let id: 0xA3 }
+class f64_min { let id: 0xA4 }
+class f64_max { let id: 0xA5 }
+class f64_copysign { let id: 0xA6 }
+
+class i32_wrap_i64 { let id: 0xA7 }
+class i32_trunc_f32_s { let id: 0xA8 }
+class i32_trunc_f32_u { let id: 0xA9 }
+class i32_trunc_f64_s { let id: 0xAA }
+class i32_trunc_f64_u { let id: 0xAB }
+class i64_extend_i32_s { let id: 0xAC }
+class i64_extend_i32_u { let id: 0xAD }
+class i64_trunc_f32_s { let id: 0xAE }
+class i64_trunc_f32_u { let id: 0xAF }
+class i64_trunc_f64_s { let id: 0xB0 }
+class i64_trunc_f64_u { let id: 0xB1 }
+class f32_convert_i32_s { let id: 0xB2 }
+class f32_convert_i32_u { let id: 0xB3 }
+class f32_convert_i64_s { let id: 0xB4 }
+class f32_convert_i64_u { let id: 0xB5 }
+class f32_demote_f64 { let id: 0xB6 }
+class f64_convert_i32_s { let id: 0xB7 }
+class f64_convert_i32_u { let id: 0xB8 }
+class f64_convert_i64_s { let id: 0xB9 }
+class f64_convert_i64_u { let id: 0xBA }
+class f64_promote_f32 { let id: 0xBB }
+class i32_reinterpret_f32 { let id: 0xBC }
+class i64_reinterpret_f64 { let id: 0xBD }
+class f32_reinterpret_i32 { let id: 0xBE }
+class f64_reinterpret_i64 { let id: 0xBF }
+
+class i32_extend8_s { let id: 0xC0 }
+class i32_extend16_s { let id: 0xC1 }
+class i64_extend8_s { let id: 0xC2 }
+class i64_extend16_s { let id: 0xC3 }
+class i64_extend32_s { let id: 0xC4 }
+
+class i32_trunc_sat_f32_s { let id: 0xFC; let code: 0x00 }
+class i32_trunc_sat_f32_u { let id: 0xFC; let code: 0x01 }
+class i32_trunc_sat_f64_s { let id: 0xFC; let code: 0x02 }
+class i32_trunc_sat_f64_u { let id: 0xFC; let code: 0x03 }
+class i64_trunc_sat_f32_s { let id: 0xFC; let code: 0x04 }
+class i64_trunc_sat_f32_u { let id: 0xFC; let code: 0x05 }
+class i64_trunc_sat_f64_s { let id: 0xFC; let code: 0x06 }
+class i64_trunc_sat_f64_u { let id: 0xFC; let code: 0x07 }
 
 class memory_init {
     let id: 0xFC
