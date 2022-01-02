@@ -292,6 +292,9 @@ class Buffer:
             self.write_u32(instr.align)
             self.write_u32(inst.offset)
 
+        elif instr.id == 0x3F or instr.id == 0x40:
+            self.write_byte(instr.zero)
+
         elif instr_id == 0x41:
             self.write_i32(instr.number)
 
@@ -307,7 +310,20 @@ class Buffer:
         elif instr_id == 0xFC:
             self.write_u32(intr.code)
 
-            if instr.code == 0x0C:
+            if instr.code == 0x08:
+                self.write_u32(instr.data_index)
+                self.wite_byte(instr.zero)
+
+            elif instr.code == 0x09:
+                self.write_u32(instr.data_index)
+
+            elif instr.code == 0x0A:
+                self.write_bytes(instr.zeros)
+
+            elif instr.code == 0x0B:
+                self.write_byte(instr.zero)
+
+            elif instr.code == 0x0C:
                 self.write_u32(instr.element)
                 self.write_u32(instr.table)
 

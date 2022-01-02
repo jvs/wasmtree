@@ -436,6 +436,8 @@ Instruction = (
     | i64_store8
     | i64_store16
     | i64_store32
+    | memory_size
+    | memory_grow
     | i32_const
     | i64_const
     | f32_const
@@ -477,6 +479,10 @@ Instruction = (
 
     | i32_add
 
+    | memory_init
+    | data_drop
+    | memory_copy
+    | memory_fill
     | table_init
     | elem_drop
     | table_copy
@@ -579,6 +585,9 @@ class i64_store8 { let id: 0x3C; align: u32; offset: u32 }
 class i64_store16 { let id: 0x3D; align: u32; offset: u32 }
 class i64_store32 { let id: 0x3E; align: u32; offset: u32 }
 
+class memory_size { let id: 0x3F; let zero: 0x00 }
+class memory_grow { let id: 0x40; let zero: 0x00 }
+
 class i32_const { let id: 0x41; number: i32 }
 class i64_const { let id: 0x42; number: i64 }
 class f32_const { let id: 0x43; number: f32 }
@@ -623,6 +632,31 @@ class f64_le { let id: 0x65 }
 class f64_ge { let id: 0x66 }
 
 class i32_add { let id: 0x6A }
+
+class memory_init {
+    let id: 0xFC
+    let code: 0x08
+    data_index: DataIndex
+    let zero: 0x00
+}
+
+class data_drop {
+    let id: 0xFC
+    let code: 0x09
+    data_index: DataIndex
+}
+
+class memory_copy {
+    let id: 0xFC
+    let code: 0x0A
+    let zeros: b'\x00\x00'
+}
+
+class memory_fill {
+    let id: 0xFC
+    let code: 0x0B
+    let zero: 0x00
+}
 
 class table_init {
     let id: 0xFC

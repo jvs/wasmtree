@@ -439,6 +439,8 @@ Instruction = (
     | i64_store8
     | i64_store16
     | i64_store32
+    | memory_size
+    | memory_grow
     | i32_const
     | i64_const
     | f32_const
@@ -480,6 +482,10 @@ Instruction = (
 
     | i32_add
 
+    | memory_init
+    | data_drop
+    | memory_copy
+    | memory_fill
     | table_init
     | elem_drop
     | table_copy
@@ -562,7 +568,6 @@ class i32_load { let id: 0x28; align: u32; offset: u32 }
 class i64_load { let id: 0x29; align: u32; offset: u32 }
 class f32_load { let id: 0x2A; align: u32; offset: u32 }
 class f64_load { let id: 0x2B; align: u32; offset: u32 }
-
 class i32_load8_s { let id: 0x2C; align: u32; offset: u32 }
 class i32_load8_u { let id: 0x2D; align: u32; offset: u32 }
 class i32_load16_s { let id: 0x2E; align: u32; offset: u32 }
@@ -582,6 +587,9 @@ class i32_store16 { let id: 0x3B; align: u32; offset: u32 }
 class i64_store8 { let id: 0x3C; align: u32; offset: u32 }
 class i64_store16 { let id: 0x3D; align: u32; offset: u32 }
 class i64_store32 { let id: 0x3E; align: u32; offset: u32 }
+
+class memory_size { let id: 0x3F; let zero: 0x00 }
+class memory_grow { let id: 0x40; let zero: 0x00 }
 
 class i32_const { let id: 0x41; number: i32 }
 class i64_const { let id: 0x42; number: i64 }
@@ -627,6 +635,31 @@ class f64_le { let id: 0x65 }
 class f64_ge { let id: 0x66 }
 
 class i32_add { let id: 0x6A }
+
+class memory_init {
+    let id: 0xFC
+    let code: 0x08
+    data_index: DataIndex
+    let zero: 0x00
+}
+
+class data_drop {
+    let id: 0xFC
+    let code: 0x09
+    data_index: DataIndex
+}
+
+class memory_copy {
+    let id: 0xFC
+    let code: 0x0A
+    let zeros: b'\\x00\\x00'
+}
+
+class memory_fill {
+    let id: 0xFC
+    let code: 0x0B
+    let zero: 0x00
+}
 
 class table_init {
     let id: 0xFC
@@ -6729,7 +6762,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 48:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_const, _pos))
+        (_status, _result, _pos) = (yield (3, _try_memory_size, _pos))
         # End Ref
         if _status:
             break
@@ -6739,7 +6772,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 49:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_const, _pos))
+        (_status, _result, _pos) = (yield (3, _try_memory_grow, _pos))
         # End Ref
         if _status:
             break
@@ -6749,7 +6782,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 50:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_const, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_const, _pos))
         # End Ref
         if _status:
             break
@@ -6759,7 +6792,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 51:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_const, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_const, _pos))
         # End Ref
         if _status:
             break
@@ -6769,7 +6802,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 52:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_eqz, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_const, _pos))
         # End Ref
         if _status:
             break
@@ -6779,7 +6812,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 53:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_eq, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_const, _pos))
         # End Ref
         if _status:
             break
@@ -6789,7 +6822,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 54:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_ne, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_eqz, _pos))
         # End Ref
         if _status:
             break
@@ -6799,7 +6832,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 55:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_lt_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_eq, _pos))
         # End Ref
         if _status:
             break
@@ -6809,7 +6842,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 56:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_lt_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_ne, _pos))
         # End Ref
         if _status:
             break
@@ -6819,7 +6852,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 57:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_gt_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_lt_s, _pos))
         # End Ref
         if _status:
             break
@@ -6829,7 +6862,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 58:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_gt_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_lt_u, _pos))
         # End Ref
         if _status:
             break
@@ -6839,7 +6872,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 59:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_le_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_gt_s, _pos))
         # End Ref
         if _status:
             break
@@ -6849,7 +6882,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 60:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_le_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_gt_u, _pos))
         # End Ref
         if _status:
             break
@@ -6859,7 +6892,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 61:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_ge_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_le_s, _pos))
         # End Ref
         if _status:
             break
@@ -6869,7 +6902,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 62:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_ge_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_le_u, _pos))
         # End Ref
         if _status:
             break
@@ -6879,7 +6912,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 63:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_eqz, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_ge_s, _pos))
         # End Ref
         if _status:
             break
@@ -6889,7 +6922,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 64:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_eq, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_ge_u, _pos))
         # End Ref
         if _status:
             break
@@ -6899,7 +6932,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 65:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_ne, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_eqz, _pos))
         # End Ref
         if _status:
             break
@@ -6909,7 +6942,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 66:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_lt_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_eq, _pos))
         # End Ref
         if _status:
             break
@@ -6919,7 +6952,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 67:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_lt_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_ne, _pos))
         # End Ref
         if _status:
             break
@@ -6929,7 +6962,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 68:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_gt_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_lt_s, _pos))
         # End Ref
         if _status:
             break
@@ -6939,7 +6972,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 69:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_gt_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_lt_u, _pos))
         # End Ref
         if _status:
             break
@@ -6949,7 +6982,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 70:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_le_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_gt_s, _pos))
         # End Ref
         if _status:
             break
@@ -6959,7 +6992,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 71:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_le_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_gt_u, _pos))
         # End Ref
         if _status:
             break
@@ -6969,7 +7002,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 72:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_ge_s, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_le_s, _pos))
         # End Ref
         if _status:
             break
@@ -6979,7 +7012,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 73:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i64_ge_u, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_le_u, _pos))
         # End Ref
         if _status:
             break
@@ -6989,7 +7022,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 74:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_eq, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_ge_s, _pos))
         # End Ref
         if _status:
             break
@@ -6999,7 +7032,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 75:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_ne, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i64_ge_u, _pos))
         # End Ref
         if _status:
             break
@@ -7009,7 +7042,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 76:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_lt, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_eq, _pos))
         # End Ref
         if _status:
             break
@@ -7019,7 +7052,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 77:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_gt, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_ne, _pos))
         # End Ref
         if _status:
             break
@@ -7029,7 +7062,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 78:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_le, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_lt, _pos))
         # End Ref
         if _status:
             break
@@ -7039,7 +7072,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 79:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f32_ge, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_gt, _pos))
         # End Ref
         if _status:
             break
@@ -7049,7 +7082,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 80:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_eq, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_le, _pos))
         # End Ref
         if _status:
             break
@@ -7059,7 +7092,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 81:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_ne, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f32_ge, _pos))
         # End Ref
         if _status:
             break
@@ -7069,7 +7102,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 82:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_lt, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_eq, _pos))
         # End Ref
         if _status:
             break
@@ -7079,7 +7112,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 83:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_gt, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_ne, _pos))
         # End Ref
         if _status:
             break
@@ -7089,7 +7122,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 84:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_le, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_lt, _pos))
         # End Ref
         if _status:
             break
@@ -7099,7 +7132,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 85:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_f64_ge, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_gt, _pos))
         # End Ref
         if _status:
             break
@@ -7109,7 +7142,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 86:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_i32_add, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_le, _pos))
         # End Ref
         if _status:
             break
@@ -7119,7 +7152,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 87:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_table_init, _pos))
+        (_status, _result, _pos) = (yield (3, _try_f64_ge, _pos))
         # End Ref
         if _status:
             break
@@ -7129,7 +7162,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 88:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_elem_drop, _pos))
+        (_status, _result, _pos) = (yield (3, _try_i32_add, _pos))
         # End Ref
         if _status:
             break
@@ -7139,7 +7172,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 89:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_table_copy, _pos))
+        (_status, _result, _pos) = (yield (3, _try_memory_init, _pos))
         # End Ref
         if _status:
             break
@@ -7149,7 +7182,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 90:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_table_grow, _pos))
+        (_status, _result, _pos) = (yield (3, _try_data_drop, _pos))
         # End Ref
         if _status:
             break
@@ -7159,7 +7192,7 @@ def _try_Instruction(_text, _pos):
         _pos = backtrack24
         # Option 91:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_table_size, _pos))
+        (_status, _result, _pos) = (yield (3, _try_memory_copy, _pos))
         # End Ref
         if _status:
             break
@@ -7168,6 +7201,66 @@ def _try_Instruction(_text, _pos):
             farthest_err11 = _result
         _pos = backtrack24
         # Option 92:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_memory_fill, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos11 < _pos):
+            farthest_pos11 = _pos
+            farthest_err11 = _result
+        _pos = backtrack24
+        # Option 93:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_table_init, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos11 < _pos):
+            farthest_pos11 = _pos
+            farthest_err11 = _result
+        _pos = backtrack24
+        # Option 94:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_elem_drop, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos11 < _pos):
+            farthest_pos11 = _pos
+            farthest_err11 = _result
+        _pos = backtrack24
+        # Option 95:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_table_copy, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos11 < _pos):
+            farthest_pos11 = _pos
+            farthest_err11 = _result
+        _pos = backtrack24
+        # Option 96:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_table_grow, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos11 < _pos):
+            farthest_pos11 = _pos
+            farthest_err11 = _result
+        _pos = backtrack24
+        # Option 97:
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_table_size, _pos))
+        # End Ref
+        if _status:
+            break
+        if (farthest_pos11 < _pos):
+            farthest_pos11 = _pos
+            farthest_err11 = _result
+        _pos = backtrack24
+        # Option 98:
         # Begin Ref
         (_status, _result, _pos) = (yield (3, _try_table_fill, _pos))
         # End Ref
@@ -7186,7 +7279,7 @@ def _parse_Instruction(text, pos=0, fullparse=True):
     return _run(text, pos, _try_Instruction, fullparse)
 
 Instruction = Rule('Instruction', _parse_Instruction, """
-    Instruction = unreachable | nop | Block | Loop | If | br | br_if | br_table | ret | call | call_indirect | ref_null | ref_is_null | ref_func | drop | select | select_t | local_get | local_set | local_tee | global_get | global_set | table_get | table_set | i32_load | i64_load | f32_load | f64_load | i32_load8_s | i32_load8_u | i32_load16_s | i32_load16_u | i64_load8_s | i64_load8_u | i64_load16_s | i64_load16_u | i64_load32_s | i64_load32_u | i32_store | i64_store | f32_store | f64_store | i32_store8 | i32_store16 | i64_store8 | i64_store16 | i64_store32 | i32_const | i64_const | f32_const | f64_const | i32_eqz | i32_eq | i32_ne | i32_lt_s | i32_lt_u | i32_gt_s | i32_gt_u | i32_le_s | i32_le_u | i32_ge_s | i32_ge_u | i64_eqz | i64_eq | i64_ne | i64_lt_s | i64_lt_u | i64_gt_s | i64_gt_u | i64_le_s | i64_le_u | i64_ge_s | i64_ge_u | f32_eq | f32_ne | f32_lt | f32_gt | f32_le | f32_ge | f64_eq | f64_ne | f64_lt | f64_gt | f64_le | f64_ge | i32_add | table_init | elem_drop | table_copy | table_grow | table_size | table_fill
+    Instruction = unreachable | nop | Block | Loop | If | br | br_if | br_table | ret | call | call_indirect | ref_null | ref_is_null | ref_func | drop | select | select_t | local_get | local_set | local_tee | global_get | global_set | table_get | table_set | i32_load | i64_load | f32_load | f64_load | i32_load8_s | i32_load8_u | i32_load16_s | i32_load16_u | i64_load8_s | i64_load8_u | i64_load16_s | i64_load16_u | i64_load32_s | i64_load32_u | i32_store | i64_store | f32_store | f64_store | i32_store8 | i32_store16 | i64_store8 | i64_store16 | i64_store32 | memory_size | memory_grow | i32_const | i64_const | f32_const | f64_const | i32_eqz | i32_eq | i32_ne | i32_lt_s | i32_lt_u | i32_gt_s | i32_gt_u | i32_le_s | i32_le_u | i32_ge_s | i32_ge_u | i64_eqz | i64_eq | i64_ne | i64_lt_s | i64_lt_u | i64_gt_s | i64_gt_u | i64_le_s | i64_le_u | i64_ge_s | i64_ge_u | f32_eq | f32_ne | f32_lt | f32_gt | f32_le | f32_ge | f64_eq | f64_ne | f64_lt | f64_gt | f64_le | f64_ge | i32_add | memory_init | data_drop | memory_copy | memory_fill | table_init | elem_drop | table_copy | table_grow | table_size | table_fill
 """)
 def _raise_error609(_text, _pos):
     if (len(_text) <= _pos):
@@ -7199,7 +7292,7 @@ def _raise_error609(_text, _pos):
         title = f'Error on line {line}, column {col}:\n{excerpt}\n'
     details = (
     "Failed to parse the 'Instruction' rule, at the expression:\n"
-    '    unreachable | nop | Block | Loop | If | br | br_if | br_table | ret | call | call_indirect | ref_null | ref_is_null | ref_func | drop | select | select_t | local_get | local_set | local_tee | global_get | global_set | table_get | table_set | i32_load | i64_load | f32_load | f64_load | i32_load8_s | i32_load8_u | i32_load16_s | i32_load16_u | i64_load8_s | i64_load8_u | i64_load16_s | i64_load16_u | i64_load32_s | i64_load32_u | i32_store | i64_store | f32_store | f64_store | i32_store8 | i32_store16 | i64_store8 | i64_store16 | i64_store32 | i32_const | i64_const | f32_const | f64_const | i32_eqz | i32_eq | i32_ne | i32_lt_s | i32_lt_u | i32_gt_s | i32_gt_u | i32_le_s | i32_le_u | i32_ge_s | i32_ge_u | i64_eqz | i64_eq | i64_ne | i64_lt_s | i64_lt_u | i64_gt_s | i64_gt_u | i64_le_s | i64_le_u | i64_ge_s | i64_ge_u | f32_eq | f32_ne | f32_lt | f32_gt | f32_le | f32_ge | f64_eq | f64_ne | f64_lt | f64_gt | f64_le | f64_ge | i32_add | table_init | elem_drop | table_copy | table_grow | table_size | table_fill\n\n'
+    '    unreachable | nop | Block | Loop | If | br | br_if | br_table | ret | call | call_indirect | ref_null | ref_is_null | ref_func | drop | select | select_t | local_get | local_set | local_tee | global_get | global_set | table_get | table_set | i32_load | i64_load | f32_load | f64_load | i32_load8_s | i32_load8_u | i32_load16_s | i32_load16_u | i64_load8_s | i64_load8_u | i64_load16_s | i64_load16_u | i64_load32_s | i64_load32_u | i32_store | i64_store | f32_store | f64_store | i32_store8 | i32_store16 | i64_store8 | i64_store16 | i64_store32 | memory_size | memory_grow | i32_const | i64_const | f32_const | f64_const | i32_eqz | i32_eq | i32_ne | i32_lt_s | i32_lt_u | i32_gt_s | i32_gt_u | i32_le_s | i32_le_u | i32_ge_s | i32_ge_u | i64_eqz | i64_eq | i64_ne | i64_lt_s | i64_lt_u | i64_gt_s | i64_gt_u | i64_le_s | i64_le_u | i64_ge_s | i64_ge_u | f32_eq | f32_ne | f32_lt | f32_gt | f32_le | f32_ge | f64_eq | f64_ne | f64_lt | f64_gt | f64_le | f64_ge | i32_add | memory_init | data_drop | memory_copy | memory_fill | table_init | elem_drop | table_copy | table_grow | table_size | table_fill\n\n'
     'Unexpected input'
     )
     raise ParseError((title + details), _pos, line, col)
@@ -7236,7 +7329,7 @@ def _try_unreachable(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error705
+            _result = _raise_error711
             _status = False
         # End Byte
         if not (_status):
@@ -7248,7 +7341,7 @@ def _try_unreachable(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error705(_text, _pos):
+def _raise_error711(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7296,7 +7389,7 @@ def _try_nop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error709
+            _result = _raise_error715
             _status = False
         # End Byte
         if not (_status):
@@ -7308,7 +7401,7 @@ def _try_nop(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error709(_text, _pos):
+def _raise_error715(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7360,7 +7453,7 @@ def _try_Block(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error713
+            _result = _raise_error719
             _status = False
         # End Byte
         if not (_status):
@@ -7384,7 +7477,7 @@ def _try_Block(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error713(_text, _pos):
+def _raise_error719(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7436,7 +7529,7 @@ def _try_Loop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error721
+            _result = _raise_error727
             _status = False
         # End Byte
         if not (_status):
@@ -7460,7 +7553,7 @@ def _try_Loop(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error721(_text, _pos):
+def _raise_error727(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7514,7 +7607,7 @@ def _try_If(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error729
+            _result = _raise_error735
             _status = False
         # End Byte
         if not (_status):
@@ -7549,7 +7642,7 @@ def _try_If(_text, _pos):
             # Peek(0x5 | 0xb)
             backtrack25 = _pos
             # Begin Choice
-            farthest_err12 = _raise_error737
+            farthest_err12 = _raise_error743
             farthest_pos12 = _pos
             while True:
                 # Option 1:
@@ -7560,7 +7653,7 @@ def _try_If(_text, _pos):
                     _pos = (_pos + 1)
                     _status = True
                 else:
-                    _result = _raise_error738
+                    _result = _raise_error744
                     _status = False
                 # End Byte
                 if _status:
@@ -7573,7 +7666,7 @@ def _try_If(_text, _pos):
                     _pos = (_pos + 1)
                     _status = True
                 else:
-                    _result = _raise_error739
+                    _result = _raise_error745
                     _status = False
                 # End Byte
                 if _status:
@@ -7608,7 +7701,7 @@ def _try_If(_text, _pos):
                     _pos = (_pos + 1)
                     _status = True
                 else:
-                    _result = _raise_error744
+                    _result = _raise_error750
                     _status = False
                 # End Byte
                 if not (_status):
@@ -7643,7 +7736,7 @@ def _try_If(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error747
+                _result = _raise_error753
                 _status = False
             # End Byte
             if _status:
@@ -7659,7 +7752,7 @@ def _try_If(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error729(_text, _pos):
+def _raise_error735(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7675,7 +7768,7 @@ def _raise_error729(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error737(_text, _pos):
+def _raise_error743(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7688,38 +7781,6 @@ def _raise_error737(_text, _pos):
     "Failed to parse the 'If' rule, at the expression:\n"
     '    0x5 | 0xb\n\n'
     'Unexpected input'
-    )
-    raise ParseError((title + details), _pos, line, col)
-
-def _raise_error738(_text, _pos):
-    if (len(_text) <= _pos):
-        title = 'Unexpected end of input.'
-        line = None
-        col = None
-    else:
-        (line, col) = _get_line_and_column(_text, _pos)
-        excerpt = _extract_excerpt(_text, _pos, col)
-        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
-    details = (
-    "Failed to parse the 'If' rule, at the expression:\n"
-    '    0x5\n\n'
-    'Expected to match the byte value 0x5'
-    )
-    raise ParseError((title + details), _pos, line, col)
-
-def _raise_error739(_text, _pos):
-    if (len(_text) <= _pos):
-        title = 'Unexpected end of input.'
-        line = None
-        col = None
-    else:
-        (line, col) = _get_line_and_column(_text, _pos)
-        excerpt = _extract_excerpt(_text, _pos, col)
-        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
-    details = (
-    "Failed to parse the 'If' rule, at the expression:\n"
-    '    0xb\n\n'
-    'Expected to match the byte value 0xb'
     )
     raise ParseError((title + details), _pos, line, col)
 
@@ -7739,7 +7800,39 @@ def _raise_error744(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error747(_text, _pos):
+def _raise_error745(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'If' rule, at the expression:\n"
+    '    0xb\n\n'
+    'Expected to match the byte value 0xb'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error750(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'If' rule, at the expression:\n"
+    '    0x5\n\n'
+    'Expected to match the byte value 0x5'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error753(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7789,7 +7882,7 @@ def _try_br(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error751
+            _result = _raise_error757
             _status = False
         # End Byte
         if not (_status):
@@ -7807,7 +7900,7 @@ def _try_br(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error751(_text, _pos):
+def _raise_error757(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7857,7 +7950,7 @@ def _try_br_if(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error757
+            _result = _raise_error763
             _status = False
         # End Byte
         if not (_status):
@@ -7875,7 +7968,7 @@ def _try_br_if(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error757(_text, _pos):
+def _raise_error763(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -7927,7 +8020,7 @@ def _try_br_table(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error763
+            _result = _raise_error769
             _status = False
         # End Byte
         if not (_status):
@@ -7953,7 +8046,7 @@ def _try_br_table(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error763(_text, _pos):
+def _raise_error769(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8001,7 +8094,7 @@ def _try_ret(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error773
+            _result = _raise_error779
             _status = False
         # End Byte
         if not (_status):
@@ -8013,7 +8106,7 @@ def _try_ret(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error773(_text, _pos):
+def _raise_error779(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8063,7 +8156,7 @@ def _try_call(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error777
+            _result = _raise_error783
             _status = False
         # End Byte
         if not (_status):
@@ -8081,7 +8174,7 @@ def _try_call(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error777(_text, _pos):
+def _raise_error783(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8133,7 +8226,7 @@ def _try_call_indirect(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error783
+            _result = _raise_error789
             _status = False
         # End Byte
         if not (_status):
@@ -8157,7 +8250,7 @@ def _try_call_indirect(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error783(_text, _pos):
+def _raise_error789(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8207,7 +8300,7 @@ def _try_ref_null(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error791
+            _result = _raise_error797
             _status = False
         # End Byte
         if not (_status):
@@ -8225,7 +8318,7 @@ def _try_ref_null(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error791(_text, _pos):
+def _raise_error797(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8273,7 +8366,7 @@ def _try_ref_is_null(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error797
+            _result = _raise_error803
             _status = False
         # End Byte
         if not (_status):
@@ -8285,7 +8378,7 @@ def _try_ref_is_null(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error797(_text, _pos):
+def _raise_error803(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8335,7 +8428,7 @@ def _try_ref_func(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error801
+            _result = _raise_error807
             _status = False
         # End Byte
         if not (_status):
@@ -8353,7 +8446,7 @@ def _try_ref_func(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error801(_text, _pos):
+def _raise_error807(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8401,7 +8494,7 @@ def _try_drop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error807
+            _result = _raise_error813
             _status = False
         # End Byte
         if not (_status):
@@ -8413,7 +8506,7 @@ def _try_drop(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error807(_text, _pos):
+def _raise_error813(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8461,7 +8554,7 @@ def _try_select(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error811
+            _result = _raise_error817
             _status = False
         # End Byte
         if not (_status):
@@ -8473,7 +8566,7 @@ def _try_select(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error811(_text, _pos):
+def _raise_error817(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8523,7 +8616,7 @@ def _try_select_t(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error815
+            _result = _raise_error821
             _status = False
         # End Byte
         if not (_status):
@@ -8543,7 +8636,7 @@ def _try_select_t(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error815(_text, _pos):
+def _raise_error821(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8593,7 +8686,7 @@ def _try_local_get(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error823
+            _result = _raise_error829
             _status = False
         # End Byte
         if not (_status):
@@ -8611,7 +8704,7 @@ def _try_local_get(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error823(_text, _pos):
+def _raise_error829(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8661,7 +8754,7 @@ def _try_local_set(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error829
+            _result = _raise_error835
             _status = False
         # End Byte
         if not (_status):
@@ -8679,7 +8772,7 @@ def _try_local_set(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error829(_text, _pos):
+def _raise_error835(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8729,7 +8822,7 @@ def _try_local_tee(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error835
+            _result = _raise_error841
             _status = False
         # End Byte
         if not (_status):
@@ -8747,7 +8840,7 @@ def _try_local_tee(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error835(_text, _pos):
+def _raise_error841(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8797,7 +8890,7 @@ def _try_global_get(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error841
+            _result = _raise_error847
             _status = False
         # End Byte
         if not (_status):
@@ -8815,7 +8908,7 @@ def _try_global_get(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error841(_text, _pos):
+def _raise_error847(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8865,7 +8958,7 @@ def _try_global_set(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error847
+            _result = _raise_error853
             _status = False
         # End Byte
         if not (_status):
@@ -8883,7 +8976,7 @@ def _try_global_set(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error847(_text, _pos):
+def _raise_error853(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -8933,7 +9026,7 @@ def _try_table_get(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error853
+            _result = _raise_error859
             _status = False
         # End Byte
         if not (_status):
@@ -8951,7 +9044,7 @@ def _try_table_get(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error853(_text, _pos):
+def _raise_error859(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9001,7 +9094,7 @@ def _try_table_set(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error859
+            _result = _raise_error865
             _status = False
         # End Byte
         if not (_status):
@@ -9019,7 +9112,7 @@ def _try_table_set(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error859(_text, _pos):
+def _raise_error865(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9071,7 +9164,7 @@ def _try_i32_load(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error865
+            _result = _raise_error871
             _status = False
         # End Byte
         if not (_status):
@@ -9095,7 +9188,7 @@ def _try_i32_load(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error865(_text, _pos):
+def _raise_error871(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9147,7 +9240,7 @@ def _try_i64_load(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error873
+            _result = _raise_error879
             _status = False
         # End Byte
         if not (_status):
@@ -9171,7 +9264,7 @@ def _try_i64_load(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error873(_text, _pos):
+def _raise_error879(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9223,7 +9316,7 @@ def _try_f32_load(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error881
+            _result = _raise_error887
             _status = False
         # End Byte
         if not (_status):
@@ -9247,7 +9340,7 @@ def _try_f32_load(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error881(_text, _pos):
+def _raise_error887(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9299,7 +9392,7 @@ def _try_f64_load(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error889
+            _result = _raise_error895
             _status = False
         # End Byte
         if not (_status):
@@ -9323,7 +9416,7 @@ def _try_f64_load(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error889(_text, _pos):
+def _raise_error895(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9375,7 +9468,7 @@ def _try_i32_load8_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error897
+            _result = _raise_error903
             _status = False
         # End Byte
         if not (_status):
@@ -9399,7 +9492,7 @@ def _try_i32_load8_s(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error897(_text, _pos):
+def _raise_error903(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9451,7 +9544,7 @@ def _try_i32_load8_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error905
+            _result = _raise_error911
             _status = False
         # End Byte
         if not (_status):
@@ -9475,7 +9568,7 @@ def _try_i32_load8_u(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error905(_text, _pos):
+def _raise_error911(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9527,7 +9620,7 @@ def _try_i32_load16_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error913
+            _result = _raise_error919
             _status = False
         # End Byte
         if not (_status):
@@ -9551,7 +9644,7 @@ def _try_i32_load16_s(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error913(_text, _pos):
+def _raise_error919(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9603,7 +9696,7 @@ def _try_i32_load16_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error921
+            _result = _raise_error927
             _status = False
         # End Byte
         if not (_status):
@@ -9627,7 +9720,7 @@ def _try_i32_load16_u(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error921(_text, _pos):
+def _raise_error927(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9679,7 +9772,7 @@ def _try_i64_load8_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error929
+            _result = _raise_error935
             _status = False
         # End Byte
         if not (_status):
@@ -9703,7 +9796,7 @@ def _try_i64_load8_s(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error929(_text, _pos):
+def _raise_error935(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9755,7 +9848,7 @@ def _try_i64_load8_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error937
+            _result = _raise_error943
             _status = False
         # End Byte
         if not (_status):
@@ -9779,7 +9872,7 @@ def _try_i64_load8_u(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error937(_text, _pos):
+def _raise_error943(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9831,7 +9924,7 @@ def _try_i64_load16_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error945
+            _result = _raise_error951
             _status = False
         # End Byte
         if not (_status):
@@ -9855,7 +9948,7 @@ def _try_i64_load16_s(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error945(_text, _pos):
+def _raise_error951(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9907,7 +10000,7 @@ def _try_i64_load16_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error953
+            _result = _raise_error959
             _status = False
         # End Byte
         if not (_status):
@@ -9931,7 +10024,7 @@ def _try_i64_load16_u(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error953(_text, _pos):
+def _raise_error959(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -9983,7 +10076,7 @@ def _try_i64_load32_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error961
+            _result = _raise_error967
             _status = False
         # End Byte
         if not (_status):
@@ -10007,7 +10100,7 @@ def _try_i64_load32_s(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error961(_text, _pos):
+def _raise_error967(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10059,7 +10152,7 @@ def _try_i64_load32_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error969
+            _result = _raise_error975
             _status = False
         # End Byte
         if not (_status):
@@ -10083,7 +10176,7 @@ def _try_i64_load32_u(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error969(_text, _pos):
+def _raise_error975(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10135,7 +10228,7 @@ def _try_i32_store(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error977
+            _result = _raise_error983
             _status = False
         # End Byte
         if not (_status):
@@ -10159,7 +10252,7 @@ def _try_i32_store(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error977(_text, _pos):
+def _raise_error983(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10211,7 +10304,7 @@ def _try_i64_store(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error985
+            _result = _raise_error991
             _status = False
         # End Byte
         if not (_status):
@@ -10235,7 +10328,7 @@ def _try_i64_store(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error985(_text, _pos):
+def _raise_error991(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10287,7 +10380,7 @@ def _try_f32_store(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error993
+            _result = _raise_error999
             _status = False
         # End Byte
         if not (_status):
@@ -10311,7 +10404,7 @@ def _try_f32_store(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error993(_text, _pos):
+def _raise_error999(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10363,7 +10456,7 @@ def _try_f64_store(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1001
+            _result = _raise_error1007
             _status = False
         # End Byte
         if not (_status):
@@ -10387,7 +10480,7 @@ def _try_f64_store(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1001(_text, _pos):
+def _raise_error1007(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10439,7 +10532,7 @@ def _try_i32_store8(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1009
+            _result = _raise_error1015
             _status = False
         # End Byte
         if not (_status):
@@ -10463,7 +10556,7 @@ def _try_i32_store8(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1009(_text, _pos):
+def _raise_error1015(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10515,7 +10608,7 @@ def _try_i32_store16(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1017
+            _result = _raise_error1023
             _status = False
         # End Byte
         if not (_status):
@@ -10539,7 +10632,7 @@ def _try_i32_store16(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1017(_text, _pos):
+def _raise_error1023(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10591,7 +10684,7 @@ def _try_i64_store8(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1025
+            _result = _raise_error1031
             _status = False
         # End Byte
         if not (_status):
@@ -10615,7 +10708,7 @@ def _try_i64_store8(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1025(_text, _pos):
+def _raise_error1031(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10667,7 +10760,7 @@ def _try_i64_store16(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1033
+            _result = _raise_error1039
             _status = False
         # End Byte
         if not (_status):
@@ -10691,7 +10784,7 @@ def _try_i64_store16(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1033(_text, _pos):
+def _raise_error1039(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10743,7 +10836,7 @@ def _try_i64_store32(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1041
+            _result = _raise_error1047
             _status = False
         # End Byte
         if not (_status):
@@ -10767,7 +10860,7 @@ def _try_i64_store32(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1041(_text, _pos):
+def _raise_error1047(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10780,6 +10873,188 @@ def _raise_error1041(_text, _pos):
     "Failed to parse the 'i64_store32' rule, at the expression:\n"
     '    0x3e\n\n'
     'Expected to match the byte value 0x3e'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class memory_size(Node):
+    """
+    class memory_size {
+        let id: 0x3f
+        let zero: 0x0
+    }
+    """
+    _fields = ()
+
+    id = 0x3f
+    zero = 0x0
+
+    def __init__(self):
+        Node.__init__(self)
+
+    def __repr__(self):
+        return f'memory_size()'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_memory_size, fullparse)
+
+
+def _try_memory_size(_text, _pos):
+    # Begin Seq
+    start_pos93 = _pos
+    while True:
+        # Begin Byte
+        # 0x3f
+        if (_pos < len(_text)) and (_text[_pos] == 63):
+            _result = 63
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1055
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Byte
+        # 0x0
+        if (_pos < len(_text)) and (_text[_pos] == 0):
+            _result = 0
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1057
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        zero = _result
+        _result = memory_size()
+        _result._metadata.position_info = (start_pos93, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error1055(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_size' rule, at the expression:\n"
+    '    0x3f\n\n'
+    'Expected to match the byte value 0x3f'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1057(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_size' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class memory_grow(Node):
+    """
+    class memory_grow {
+        let id: 0x40
+        let zero: 0x0
+    }
+    """
+    _fields = ()
+
+    id = 0x40
+    zero = 0x0
+
+    def __init__(self):
+        Node.__init__(self)
+
+    def __repr__(self):
+        return f'memory_grow()'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_memory_grow, fullparse)
+
+
+def _try_memory_grow(_text, _pos):
+    # Begin Seq
+    start_pos94 = _pos
+    while True:
+        # Begin Byte
+        # 0x40
+        if (_pos < len(_text)) and (_text[_pos] == 64):
+            _result = 64
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1061
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Byte
+        # 0x0
+        if (_pos < len(_text)) and (_text[_pos] == 0):
+            _result = 0
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1063
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        zero = _result
+        _result = memory_grow()
+        _result._metadata.position_info = (start_pos94, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error1061(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_grow' rule, at the expression:\n"
+    '    0x40\n\n'
+    'Expected to match the byte value 0x40'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1063(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_grow' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
     )
     raise ParseError((title + details), _pos, line, col)
 
@@ -10808,7 +11083,7 @@ class i32_const(Node):
 
 def _try_i32_const(_text, _pos):
     # Begin Seq
-    start_pos93 = _pos
+    start_pos95 = _pos
     while True:
         # Begin Byte
         # 0x41
@@ -10817,7 +11092,7 @@ def _try_i32_const(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1049
+            _result = _raise_error1067
             _status = False
         # End Byte
         if not (_status):
@@ -10830,12 +11105,12 @@ def _try_i32_const(_text, _pos):
             break
         number = _result
         _result = i32_const(number)
-        _result._metadata.position_info = (start_pos93, _pos)
+        _result._metadata.position_info = (start_pos95, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1049(_text, _pos):
+def _raise_error1067(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10876,7 +11151,7 @@ class i64_const(Node):
 
 def _try_i64_const(_text, _pos):
     # Begin Seq
-    start_pos94 = _pos
+    start_pos96 = _pos
     while True:
         # Begin Byte
         # 0x42
@@ -10885,7 +11160,7 @@ def _try_i64_const(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1055
+            _result = _raise_error1073
             _status = False
         # End Byte
         if not (_status):
@@ -10898,12 +11173,12 @@ def _try_i64_const(_text, _pos):
             break
         number = _result
         _result = i64_const(number)
-        _result._metadata.position_info = (start_pos94, _pos)
+        _result._metadata.position_info = (start_pos96, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1055(_text, _pos):
+def _raise_error1073(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -10944,7 +11219,7 @@ class f32_const(Node):
 
 def _try_f32_const(_text, _pos):
     # Begin Seq
-    start_pos95 = _pos
+    start_pos97 = _pos
     while True:
         # Begin Byte
         # 0x43
@@ -10953,7 +11228,7 @@ def _try_f32_const(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1061
+            _result = _raise_error1079
             _status = False
         # End Byte
         if not (_status):
@@ -10966,12 +11241,12 @@ def _try_f32_const(_text, _pos):
             break
         number = _result
         _result = f32_const(number)
-        _result._metadata.position_info = (start_pos95, _pos)
+        _result._metadata.position_info = (start_pos97, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1061(_text, _pos):
+def _raise_error1079(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11012,7 +11287,7 @@ class f64_const(Node):
 
 def _try_f64_const(_text, _pos):
     # Begin Seq
-    start_pos96 = _pos
+    start_pos98 = _pos
     while True:
         # Begin Byte
         # 0x44
@@ -11021,7 +11296,7 @@ def _try_f64_const(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1067
+            _result = _raise_error1085
             _status = False
         # End Byte
         if not (_status):
@@ -11034,12 +11309,12 @@ def _try_f64_const(_text, _pos):
             break
         number = _result
         _result = f64_const(number)
-        _result._metadata.position_info = (start_pos96, _pos)
+        _result._metadata.position_info = (start_pos98, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1067(_text, _pos):
+def _raise_error1085(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11078,7 +11353,7 @@ class i32_eqz(Node):
 
 def _try_i32_eqz(_text, _pos):
     # Begin Seq
-    start_pos97 = _pos
+    start_pos99 = _pos
     while True:
         # Begin Byte
         # 0x45
@@ -11087,19 +11362,19 @@ def _try_i32_eqz(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1073
+            _result = _raise_error1091
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_eqz()
-        _result._metadata.position_info = (start_pos97, _pos)
+        _result._metadata.position_info = (start_pos99, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1073(_text, _pos):
+def _raise_error1091(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11138,7 +11413,7 @@ class i32_eq(Node):
 
 def _try_i32_eq(_text, _pos):
     # Begin Seq
-    start_pos98 = _pos
+    start_pos100 = _pos
     while True:
         # Begin Byte
         # 0x46
@@ -11147,19 +11422,19 @@ def _try_i32_eq(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1077
+            _result = _raise_error1095
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_eq()
-        _result._metadata.position_info = (start_pos98, _pos)
+        _result._metadata.position_info = (start_pos100, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1077(_text, _pos):
+def _raise_error1095(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11198,7 +11473,7 @@ class i32_ne(Node):
 
 def _try_i32_ne(_text, _pos):
     # Begin Seq
-    start_pos99 = _pos
+    start_pos101 = _pos
     while True:
         # Begin Byte
         # 0x47
@@ -11207,19 +11482,19 @@ def _try_i32_ne(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1081
+            _result = _raise_error1099
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_ne()
-        _result._metadata.position_info = (start_pos99, _pos)
+        _result._metadata.position_info = (start_pos101, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1081(_text, _pos):
+def _raise_error1099(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11258,7 +11533,7 @@ class i32_lt_s(Node):
 
 def _try_i32_lt_s(_text, _pos):
     # Begin Seq
-    start_pos100 = _pos
+    start_pos102 = _pos
     while True:
         # Begin Byte
         # 0x48
@@ -11267,19 +11542,19 @@ def _try_i32_lt_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1085
+            _result = _raise_error1103
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_lt_s()
-        _result._metadata.position_info = (start_pos100, _pos)
+        _result._metadata.position_info = (start_pos102, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1085(_text, _pos):
+def _raise_error1103(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11318,7 +11593,7 @@ class i32_lt_u(Node):
 
 def _try_i32_lt_u(_text, _pos):
     # Begin Seq
-    start_pos101 = _pos
+    start_pos103 = _pos
     while True:
         # Begin Byte
         # 0x49
@@ -11327,19 +11602,19 @@ def _try_i32_lt_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1089
+            _result = _raise_error1107
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_lt_u()
-        _result._metadata.position_info = (start_pos101, _pos)
+        _result._metadata.position_info = (start_pos103, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1089(_text, _pos):
+def _raise_error1107(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11378,7 +11653,7 @@ class i32_gt_s(Node):
 
 def _try_i32_gt_s(_text, _pos):
     # Begin Seq
-    start_pos102 = _pos
+    start_pos104 = _pos
     while True:
         # Begin Byte
         # 0x4a
@@ -11387,19 +11662,19 @@ def _try_i32_gt_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1093
+            _result = _raise_error1111
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_gt_s()
-        _result._metadata.position_info = (start_pos102, _pos)
+        _result._metadata.position_info = (start_pos104, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1093(_text, _pos):
+def _raise_error1111(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11438,7 +11713,7 @@ class i32_gt_u(Node):
 
 def _try_i32_gt_u(_text, _pos):
     # Begin Seq
-    start_pos103 = _pos
+    start_pos105 = _pos
     while True:
         # Begin Byte
         # 0x4b
@@ -11447,19 +11722,19 @@ def _try_i32_gt_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1097
+            _result = _raise_error1115
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_gt_u()
-        _result._metadata.position_info = (start_pos103, _pos)
+        _result._metadata.position_info = (start_pos105, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1097(_text, _pos):
+def _raise_error1115(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11498,7 +11773,7 @@ class i32_le_s(Node):
 
 def _try_i32_le_s(_text, _pos):
     # Begin Seq
-    start_pos104 = _pos
+    start_pos106 = _pos
     while True:
         # Begin Byte
         # 0x4c
@@ -11507,19 +11782,19 @@ def _try_i32_le_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1101
+            _result = _raise_error1119
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_le_s()
-        _result._metadata.position_info = (start_pos104, _pos)
+        _result._metadata.position_info = (start_pos106, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1101(_text, _pos):
+def _raise_error1119(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11558,7 +11833,7 @@ class i32_le_u(Node):
 
 def _try_i32_le_u(_text, _pos):
     # Begin Seq
-    start_pos105 = _pos
+    start_pos107 = _pos
     while True:
         # Begin Byte
         # 0x4d
@@ -11567,19 +11842,19 @@ def _try_i32_le_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1105
+            _result = _raise_error1123
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_le_u()
-        _result._metadata.position_info = (start_pos105, _pos)
+        _result._metadata.position_info = (start_pos107, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1105(_text, _pos):
+def _raise_error1123(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11618,7 +11893,7 @@ class i32_ge_s(Node):
 
 def _try_i32_ge_s(_text, _pos):
     # Begin Seq
-    start_pos106 = _pos
+    start_pos108 = _pos
     while True:
         # Begin Byte
         # 0x4e
@@ -11627,19 +11902,19 @@ def _try_i32_ge_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1109
+            _result = _raise_error1127
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_ge_s()
-        _result._metadata.position_info = (start_pos106, _pos)
+        _result._metadata.position_info = (start_pos108, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1109(_text, _pos):
+def _raise_error1127(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11678,7 +11953,7 @@ class i32_ge_u(Node):
 
 def _try_i32_ge_u(_text, _pos):
     # Begin Seq
-    start_pos107 = _pos
+    start_pos109 = _pos
     while True:
         # Begin Byte
         # 0x4f
@@ -11687,19 +11962,19 @@ def _try_i32_ge_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1113
+            _result = _raise_error1131
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_ge_u()
-        _result._metadata.position_info = (start_pos107, _pos)
+        _result._metadata.position_info = (start_pos109, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1113(_text, _pos):
+def _raise_error1131(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11738,7 +12013,7 @@ class i64_eqz(Node):
 
 def _try_i64_eqz(_text, _pos):
     # Begin Seq
-    start_pos108 = _pos
+    start_pos110 = _pos
     while True:
         # Begin Byte
         # 0x50
@@ -11747,19 +12022,19 @@ def _try_i64_eqz(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1117
+            _result = _raise_error1135
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_eqz()
-        _result._metadata.position_info = (start_pos108, _pos)
+        _result._metadata.position_info = (start_pos110, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1117(_text, _pos):
+def _raise_error1135(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11798,7 +12073,7 @@ class i64_eq(Node):
 
 def _try_i64_eq(_text, _pos):
     # Begin Seq
-    start_pos109 = _pos
+    start_pos111 = _pos
     while True:
         # Begin Byte
         # 0x51
@@ -11807,19 +12082,19 @@ def _try_i64_eq(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1121
+            _result = _raise_error1139
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_eq()
-        _result._metadata.position_info = (start_pos109, _pos)
+        _result._metadata.position_info = (start_pos111, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1121(_text, _pos):
+def _raise_error1139(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11858,7 +12133,7 @@ class i64_ne(Node):
 
 def _try_i64_ne(_text, _pos):
     # Begin Seq
-    start_pos110 = _pos
+    start_pos112 = _pos
     while True:
         # Begin Byte
         # 0x52
@@ -11867,19 +12142,19 @@ def _try_i64_ne(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1125
+            _result = _raise_error1143
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_ne()
-        _result._metadata.position_info = (start_pos110, _pos)
+        _result._metadata.position_info = (start_pos112, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1125(_text, _pos):
+def _raise_error1143(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11918,7 +12193,7 @@ class i64_lt_s(Node):
 
 def _try_i64_lt_s(_text, _pos):
     # Begin Seq
-    start_pos111 = _pos
+    start_pos113 = _pos
     while True:
         # Begin Byte
         # 0x53
@@ -11927,19 +12202,19 @@ def _try_i64_lt_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1129
+            _result = _raise_error1147
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_lt_s()
-        _result._metadata.position_info = (start_pos111, _pos)
+        _result._metadata.position_info = (start_pos113, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1129(_text, _pos):
+def _raise_error1147(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -11978,7 +12253,7 @@ class i64_lt_u(Node):
 
 def _try_i64_lt_u(_text, _pos):
     # Begin Seq
-    start_pos112 = _pos
+    start_pos114 = _pos
     while True:
         # Begin Byte
         # 0x54
@@ -11987,19 +12262,19 @@ def _try_i64_lt_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1133
+            _result = _raise_error1151
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_lt_u()
-        _result._metadata.position_info = (start_pos112, _pos)
+        _result._metadata.position_info = (start_pos114, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1133(_text, _pos):
+def _raise_error1151(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12038,7 +12313,7 @@ class i64_gt_s(Node):
 
 def _try_i64_gt_s(_text, _pos):
     # Begin Seq
-    start_pos113 = _pos
+    start_pos115 = _pos
     while True:
         # Begin Byte
         # 0x55
@@ -12047,19 +12322,19 @@ def _try_i64_gt_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1137
+            _result = _raise_error1155
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_gt_s()
-        _result._metadata.position_info = (start_pos113, _pos)
+        _result._metadata.position_info = (start_pos115, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1137(_text, _pos):
+def _raise_error1155(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12098,7 +12373,7 @@ class i64_gt_u(Node):
 
 def _try_i64_gt_u(_text, _pos):
     # Begin Seq
-    start_pos114 = _pos
+    start_pos116 = _pos
     while True:
         # Begin Byte
         # 0x56
@@ -12107,19 +12382,19 @@ def _try_i64_gt_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1141
+            _result = _raise_error1159
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_gt_u()
-        _result._metadata.position_info = (start_pos114, _pos)
+        _result._metadata.position_info = (start_pos116, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1141(_text, _pos):
+def _raise_error1159(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12158,7 +12433,7 @@ class i64_le_s(Node):
 
 def _try_i64_le_s(_text, _pos):
     # Begin Seq
-    start_pos115 = _pos
+    start_pos117 = _pos
     while True:
         # Begin Byte
         # 0x57
@@ -12167,19 +12442,19 @@ def _try_i64_le_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1145
+            _result = _raise_error1163
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_le_s()
-        _result._metadata.position_info = (start_pos115, _pos)
+        _result._metadata.position_info = (start_pos117, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1145(_text, _pos):
+def _raise_error1163(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12218,7 +12493,7 @@ class i64_le_u(Node):
 
 def _try_i64_le_u(_text, _pos):
     # Begin Seq
-    start_pos116 = _pos
+    start_pos118 = _pos
     while True:
         # Begin Byte
         # 0x58
@@ -12227,19 +12502,19 @@ def _try_i64_le_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1149
+            _result = _raise_error1167
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_le_u()
-        _result._metadata.position_info = (start_pos116, _pos)
+        _result._metadata.position_info = (start_pos118, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1149(_text, _pos):
+def _raise_error1167(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12278,7 +12553,7 @@ class i64_ge_s(Node):
 
 def _try_i64_ge_s(_text, _pos):
     # Begin Seq
-    start_pos117 = _pos
+    start_pos119 = _pos
     while True:
         # Begin Byte
         # 0x59
@@ -12287,19 +12562,19 @@ def _try_i64_ge_s(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1153
+            _result = _raise_error1171
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_ge_s()
-        _result._metadata.position_info = (start_pos117, _pos)
+        _result._metadata.position_info = (start_pos119, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1153(_text, _pos):
+def _raise_error1171(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12338,7 +12613,7 @@ class i64_ge_u(Node):
 
 def _try_i64_ge_u(_text, _pos):
     # Begin Seq
-    start_pos118 = _pos
+    start_pos120 = _pos
     while True:
         # Begin Byte
         # 0x5a
@@ -12347,19 +12622,19 @@ def _try_i64_ge_u(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1157
+            _result = _raise_error1175
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i64_ge_u()
-        _result._metadata.position_info = (start_pos118, _pos)
+        _result._metadata.position_info = (start_pos120, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1157(_text, _pos):
+def _raise_error1175(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12398,7 +12673,7 @@ class f32_eq(Node):
 
 def _try_f32_eq(_text, _pos):
     # Begin Seq
-    start_pos119 = _pos
+    start_pos121 = _pos
     while True:
         # Begin Byte
         # 0x5b
@@ -12407,19 +12682,19 @@ def _try_f32_eq(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1161
+            _result = _raise_error1179
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f32_eq()
-        _result._metadata.position_info = (start_pos119, _pos)
+        _result._metadata.position_info = (start_pos121, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1161(_text, _pos):
+def _raise_error1179(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12458,7 +12733,7 @@ class f32_ne(Node):
 
 def _try_f32_ne(_text, _pos):
     # Begin Seq
-    start_pos120 = _pos
+    start_pos122 = _pos
     while True:
         # Begin Byte
         # 0x5c
@@ -12467,19 +12742,19 @@ def _try_f32_ne(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1165
+            _result = _raise_error1183
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f32_ne()
-        _result._metadata.position_info = (start_pos120, _pos)
+        _result._metadata.position_info = (start_pos122, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1165(_text, _pos):
+def _raise_error1183(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12518,7 +12793,7 @@ class f32_lt(Node):
 
 def _try_f32_lt(_text, _pos):
     # Begin Seq
-    start_pos121 = _pos
+    start_pos123 = _pos
     while True:
         # Begin Byte
         # 0x5d
@@ -12527,19 +12802,19 @@ def _try_f32_lt(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1169
+            _result = _raise_error1187
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f32_lt()
-        _result._metadata.position_info = (start_pos121, _pos)
+        _result._metadata.position_info = (start_pos123, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1169(_text, _pos):
+def _raise_error1187(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12578,7 +12853,7 @@ class f32_gt(Node):
 
 def _try_f32_gt(_text, _pos):
     # Begin Seq
-    start_pos122 = _pos
+    start_pos124 = _pos
     while True:
         # Begin Byte
         # 0x5e
@@ -12587,19 +12862,19 @@ def _try_f32_gt(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1173
+            _result = _raise_error1191
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f32_gt()
-        _result._metadata.position_info = (start_pos122, _pos)
+        _result._metadata.position_info = (start_pos124, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1173(_text, _pos):
+def _raise_error1191(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12638,7 +12913,7 @@ class f32_le(Node):
 
 def _try_f32_le(_text, _pos):
     # Begin Seq
-    start_pos123 = _pos
+    start_pos125 = _pos
     while True:
         # Begin Byte
         # 0x5f
@@ -12647,19 +12922,19 @@ def _try_f32_le(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1177
+            _result = _raise_error1195
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f32_le()
-        _result._metadata.position_info = (start_pos123, _pos)
+        _result._metadata.position_info = (start_pos125, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1177(_text, _pos):
+def _raise_error1195(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12698,7 +12973,7 @@ class f32_ge(Node):
 
 def _try_f32_ge(_text, _pos):
     # Begin Seq
-    start_pos124 = _pos
+    start_pos126 = _pos
     while True:
         # Begin Byte
         # 0x60
@@ -12707,19 +12982,19 @@ def _try_f32_ge(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1181
+            _result = _raise_error1199
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f32_ge()
-        _result._metadata.position_info = (start_pos124, _pos)
+        _result._metadata.position_info = (start_pos126, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1181(_text, _pos):
+def _raise_error1199(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12758,7 +13033,7 @@ class f64_eq(Node):
 
 def _try_f64_eq(_text, _pos):
     # Begin Seq
-    start_pos125 = _pos
+    start_pos127 = _pos
     while True:
         # Begin Byte
         # 0x61
@@ -12767,19 +13042,19 @@ def _try_f64_eq(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1185
+            _result = _raise_error1203
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f64_eq()
-        _result._metadata.position_info = (start_pos125, _pos)
+        _result._metadata.position_info = (start_pos127, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1185(_text, _pos):
+def _raise_error1203(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12818,7 +13093,7 @@ class f64_ne(Node):
 
 def _try_f64_ne(_text, _pos):
     # Begin Seq
-    start_pos126 = _pos
+    start_pos128 = _pos
     while True:
         # Begin Byte
         # 0x62
@@ -12827,19 +13102,19 @@ def _try_f64_ne(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1189
+            _result = _raise_error1207
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f64_ne()
-        _result._metadata.position_info = (start_pos126, _pos)
+        _result._metadata.position_info = (start_pos128, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1189(_text, _pos):
+def _raise_error1207(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12878,7 +13153,7 @@ class f64_lt(Node):
 
 def _try_f64_lt(_text, _pos):
     # Begin Seq
-    start_pos127 = _pos
+    start_pos129 = _pos
     while True:
         # Begin Byte
         # 0x63
@@ -12887,19 +13162,19 @@ def _try_f64_lt(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1193
+            _result = _raise_error1211
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f64_lt()
-        _result._metadata.position_info = (start_pos127, _pos)
+        _result._metadata.position_info = (start_pos129, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1193(_text, _pos):
+def _raise_error1211(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12938,7 +13213,7 @@ class f64_gt(Node):
 
 def _try_f64_gt(_text, _pos):
     # Begin Seq
-    start_pos128 = _pos
+    start_pos130 = _pos
     while True:
         # Begin Byte
         # 0x64
@@ -12947,19 +13222,19 @@ def _try_f64_gt(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1197
+            _result = _raise_error1215
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f64_gt()
-        _result._metadata.position_info = (start_pos128, _pos)
+        _result._metadata.position_info = (start_pos130, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1197(_text, _pos):
+def _raise_error1215(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -12998,7 +13273,7 @@ class f64_le(Node):
 
 def _try_f64_le(_text, _pos):
     # Begin Seq
-    start_pos129 = _pos
+    start_pos131 = _pos
     while True:
         # Begin Byte
         # 0x65
@@ -13007,19 +13282,19 @@ def _try_f64_le(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1201
+            _result = _raise_error1219
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f64_le()
-        _result._metadata.position_info = (start_pos129, _pos)
+        _result._metadata.position_info = (start_pos131, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1201(_text, _pos):
+def _raise_error1219(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13058,7 +13333,7 @@ class f64_ge(Node):
 
 def _try_f64_ge(_text, _pos):
     # Begin Seq
-    start_pos130 = _pos
+    start_pos132 = _pos
     while True:
         # Begin Byte
         # 0x66
@@ -13067,19 +13342,19 @@ def _try_f64_ge(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1205
+            _result = _raise_error1223
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = f64_ge()
-        _result._metadata.position_info = (start_pos130, _pos)
+        _result._metadata.position_info = (start_pos132, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1205(_text, _pos):
+def _raise_error1223(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13118,7 +13393,7 @@ class i32_add(Node):
 
 def _try_i32_add(_text, _pos):
     # Begin Seq
-    start_pos131 = _pos
+    start_pos133 = _pos
     while True:
         # Begin Byte
         # 0x6a
@@ -13127,19 +13402,19 @@ def _try_i32_add(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1209
+            _result = _raise_error1227
             _status = False
         # End Byte
         if not (_status):
             break
         id = _result
         _result = i32_add()
-        _result._metadata.position_info = (start_pos131, _pos)
+        _result._metadata.position_info = (start_pos133, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1209(_text, _pos):
+def _raise_error1227(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13152,6 +13427,480 @@ def _raise_error1209(_text, _pos):
     "Failed to parse the 'i32_add' rule, at the expression:\n"
     '    0x6a\n\n'
     'Expected to match the byte value 0x6a'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class memory_init(Node):
+    """
+    class memory_init {
+        let id: 0xfc
+        let code: 0x8
+        data_index: DataIndex
+        let zero: 0x0
+    }
+    """
+    _fields = ('data_index',)
+
+    id = 0xfc
+    code = 0x8
+    zero = 0x0
+
+    def __init__(self, data_index):
+        Node.__init__(self)
+        self.data_index = data_index
+
+    def __repr__(self):
+        return f'memory_init(data_index={self.data_index!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_memory_init, fullparse)
+
+
+def _try_memory_init(_text, _pos):
+    # Begin Seq
+    start_pos134 = _pos
+    while True:
+        # Begin Byte
+        # 0xfc
+        if (_pos < len(_text)) and (_text[_pos] == 252):
+            _result = 252
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1231
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Byte
+        # 0x8
+        if (_pos < len(_text)) and (_text[_pos] == 8):
+            _result = 8
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1233
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        code = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_DataIndex, _pos))
+        # End Ref
+        if not (_status):
+            break
+        data_index = _result
+        # Begin Byte
+        # 0x0
+        if (_pos < len(_text)) and (_text[_pos] == 0):
+            _result = 0
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1237
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        zero = _result
+        _result = memory_init(data_index)
+        _result._metadata.position_info = (start_pos134, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error1231(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_init' rule, at the expression:\n"
+    '    0xfc\n\n'
+    'Expected to match the byte value 0xfc'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1233(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_init' rule, at the expression:\n"
+    '    0x8\n\n'
+    'Expected to match the byte value 0x8'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1237(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_init' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class data_drop(Node):
+    """
+    class data_drop {
+        let id: 0xfc
+        let code: 0x9
+        data_index: DataIndex
+    }
+    """
+    _fields = ('data_index',)
+
+    id = 0xfc
+    code = 0x9
+
+    def __init__(self, data_index):
+        Node.__init__(self)
+        self.data_index = data_index
+
+    def __repr__(self):
+        return f'data_drop(data_index={self.data_index!r})'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_data_drop, fullparse)
+
+
+def _try_data_drop(_text, _pos):
+    # Begin Seq
+    start_pos135 = _pos
+    while True:
+        # Begin Byte
+        # 0xfc
+        if (_pos < len(_text)) and (_text[_pos] == 252):
+            _result = 252
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1241
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Byte
+        # 0x9
+        if (_pos < len(_text)) and (_text[_pos] == 9):
+            _result = 9
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1243
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        code = _result
+        # Begin Ref
+        (_status, _result, _pos) = (yield (3, _try_DataIndex, _pos))
+        # End Ref
+        if not (_status):
+            break
+        data_index = _result
+        _result = data_drop(data_index)
+        _result._metadata.position_info = (start_pos135, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error1241(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'data_drop' rule, at the expression:\n"
+    '    0xfc\n\n'
+    'Expected to match the byte value 0xfc'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1243(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'data_drop' rule, at the expression:\n"
+    '    0x9\n\n'
+    'Expected to match the byte value 0x9'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class memory_copy(Node):
+    """
+    class memory_copy {
+        let id: 0xfc
+        let code: 0xa
+        let zeros: b'\\x00\\x00'
+    }
+    """
+    _fields = ()
+
+    id = 0xfc
+    code = 0xa
+    zeros = b'\x00\x00'
+
+    def __init__(self):
+        Node.__init__(self)
+
+    def __repr__(self):
+        return f'memory_copy()'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_memory_copy, fullparse)
+
+
+def _try_memory_copy(_text, _pos):
+    # Begin Seq
+    start_pos136 = _pos
+    while True:
+        # Begin Byte
+        # 0xfc
+        if (_pos < len(_text)) and (_text[_pos] == 252):
+            _result = 252
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1249
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Byte
+        # 0xa
+        if (_pos < len(_text)) and (_text[_pos] == 10):
+            _result = 10
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1251
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        code = _result
+        # Begin Str
+        value3 = b'\x00\x00'
+        end3 = (_pos + 2)
+        if (_text[slice(_pos, end3, None)] == value3):
+            _result = value3
+            _pos = end3
+            _status = True
+        else:
+            _result = _raise_error1253
+            _status = False
+        # End Str
+        if not (_status):
+            break
+        zeros = _result
+        _result = memory_copy()
+        _result._metadata.position_info = (start_pos136, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error1249(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_copy' rule, at the expression:\n"
+    '    0xfc\n\n'
+    'Expected to match the byte value 0xfc'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1251(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_copy' rule, at the expression:\n"
+    '    0xa\n\n'
+    'Expected to match the byte value 0xa'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1253(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_copy' rule, at the expression:\n"
+    "    b'\\x00\\x00'\n\n"
+    "Expected to match the string b'\\x00\\x00'"
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+class memory_fill(Node):
+    """
+    class memory_fill {
+        let id: 0xfc
+        let code: 0xb
+        let zero: 0x0
+    }
+    """
+    _fields = ()
+
+    id = 0xfc
+    code = 0xb
+    zero = 0x0
+
+    def __init__(self):
+        Node.__init__(self)
+
+    def __repr__(self):
+        return f'memory_fill()'
+
+    @staticmethod
+    def parse(text, pos=0, fullparse=True):
+        return _run(text, pos, _try_memory_fill, fullparse)
+
+
+def _try_memory_fill(_text, _pos):
+    # Begin Seq
+    start_pos137 = _pos
+    while True:
+        # Begin Byte
+        # 0xfc
+        if (_pos < len(_text)) and (_text[_pos] == 252):
+            _result = 252
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1257
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        id = _result
+        # Begin Byte
+        # 0xb
+        if (_pos < len(_text)) and (_text[_pos] == 11):
+            _result = 11
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1259
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        code = _result
+        # Begin Byte
+        # 0x0
+        if (_pos < len(_text)) and (_text[_pos] == 0):
+            _result = 0
+            _pos = (_pos + 1)
+            _status = True
+        else:
+            _result = _raise_error1261
+            _status = False
+        # End Byte
+        if not (_status):
+            break
+        zero = _result
+        _result = memory_fill()
+        _result._metadata.position_info = (start_pos137, _pos)
+        break
+    # End Seq
+    yield (_status, _result, _pos)
+
+def _raise_error1257(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_fill' rule, at the expression:\n"
+    '    0xfc\n\n'
+    'Expected to match the byte value 0xfc'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1259(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_fill' rule, at the expression:\n"
+    '    0xb\n\n'
+    'Expected to match the byte value 0xb'
+    )
+    raise ParseError((title + details), _pos, line, col)
+
+def _raise_error1261(_text, _pos):
+    if (len(_text) <= _pos):
+        title = 'Unexpected end of input.'
+        line = None
+        col = None
+    else:
+        (line, col) = _get_line_and_column(_text, _pos)
+        excerpt = _extract_excerpt(_text, _pos, col)
+        title = f'Error on line {line}, column {col}:\n{excerpt}\n'
+    details = (
+    "Failed to parse the 'memory_fill' rule, at the expression:\n"
+    '    0x0\n\n'
+    'Expected to match the byte value 0x0'
     )
     raise ParseError((title + details), _pos, line, col)
 
@@ -13184,7 +13933,7 @@ class table_init(Node):
 
 def _try_table_init(_text, _pos):
     # Begin Seq
-    start_pos132 = _pos
+    start_pos138 = _pos
     while True:
         # Begin Byte
         # 0xfc
@@ -13193,7 +13942,7 @@ def _try_table_init(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1213
+            _result = _raise_error1265
             _status = False
         # End Byte
         if not (_status):
@@ -13206,7 +13955,7 @@ def _try_table_init(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1215
+            _result = _raise_error1267
             _status = False
         # End Byte
         if not (_status):
@@ -13225,12 +13974,12 @@ def _try_table_init(_text, _pos):
             break
         table = _result
         _result = table_init(element, table)
-        _result._metadata.position_info = (start_pos132, _pos)
+        _result._metadata.position_info = (start_pos138, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1213(_text, _pos):
+def _raise_error1265(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13246,7 +13995,7 @@ def _raise_error1213(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error1215(_text, _pos):
+def _raise_error1267(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13289,7 +14038,7 @@ class elem_drop(Node):
 
 def _try_elem_drop(_text, _pos):
     # Begin Seq
-    start_pos133 = _pos
+    start_pos139 = _pos
     while True:
         # Begin Byte
         # 0xfc
@@ -13298,7 +14047,7 @@ def _try_elem_drop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1223
+            _result = _raise_error1275
             _status = False
         # End Byte
         if not (_status):
@@ -13311,7 +14060,7 @@ def _try_elem_drop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1225
+            _result = _raise_error1277
             _status = False
         # End Byte
         if not (_status):
@@ -13324,12 +14073,12 @@ def _try_elem_drop(_text, _pos):
             break
         element = _result
         _result = elem_drop(element)
-        _result._metadata.position_info = (start_pos133, _pos)
+        _result._metadata.position_info = (start_pos139, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1223(_text, _pos):
+def _raise_error1275(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13345,7 +14094,7 @@ def _raise_error1223(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error1225(_text, _pos):
+def _raise_error1277(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13390,7 +14139,7 @@ class table_copy(Node):
 
 def _try_table_copy(_text, _pos):
     # Begin Seq
-    start_pos134 = _pos
+    start_pos140 = _pos
     while True:
         # Begin Byte
         # 0xfc
@@ -13399,7 +14148,7 @@ def _try_table_copy(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1231
+            _result = _raise_error1283
             _status = False
         # End Byte
         if not (_status):
@@ -13412,7 +14161,7 @@ def _try_table_copy(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1233
+            _result = _raise_error1285
             _status = False
         # End Byte
         if not (_status):
@@ -13431,12 +14180,12 @@ def _try_table_copy(_text, _pos):
             break
         source = _result
         _result = table_copy(destination, source)
-        _result._metadata.position_info = (start_pos134, _pos)
+        _result._metadata.position_info = (start_pos140, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1231(_text, _pos):
+def _raise_error1283(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13452,7 +14201,7 @@ def _raise_error1231(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error1233(_text, _pos):
+def _raise_error1285(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13495,7 +14244,7 @@ class table_grow(Node):
 
 def _try_table_grow(_text, _pos):
     # Begin Seq
-    start_pos135 = _pos
+    start_pos141 = _pos
     while True:
         # Begin Byte
         # 0xfc
@@ -13504,7 +14253,7 @@ def _try_table_grow(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1241
+            _result = _raise_error1293
             _status = False
         # End Byte
         if not (_status):
@@ -13517,7 +14266,7 @@ def _try_table_grow(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1243
+            _result = _raise_error1295
             _status = False
         # End Byte
         if not (_status):
@@ -13530,12 +14279,12 @@ def _try_table_grow(_text, _pos):
             break
         table = _result
         _result = table_grow(table)
-        _result._metadata.position_info = (start_pos135, _pos)
+        _result._metadata.position_info = (start_pos141, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1241(_text, _pos):
+def _raise_error1293(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13551,7 +14300,7 @@ def _raise_error1241(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error1243(_text, _pos):
+def _raise_error1295(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13594,7 +14343,7 @@ class table_size(Node):
 
 def _try_table_size(_text, _pos):
     # Begin Seq
-    start_pos136 = _pos
+    start_pos142 = _pos
     while True:
         # Begin Byte
         # 0xfc
@@ -13603,7 +14352,7 @@ def _try_table_size(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1249
+            _result = _raise_error1301
             _status = False
         # End Byte
         if not (_status):
@@ -13616,7 +14365,7 @@ def _try_table_size(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1251
+            _result = _raise_error1303
             _status = False
         # End Byte
         if not (_status):
@@ -13629,12 +14378,12 @@ def _try_table_size(_text, _pos):
             break
         table = _result
         _result = table_size(table)
-        _result._metadata.position_info = (start_pos136, _pos)
+        _result._metadata.position_info = (start_pos142, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1249(_text, _pos):
+def _raise_error1301(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13650,7 +14399,7 @@ def _raise_error1249(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error1251(_text, _pos):
+def _raise_error1303(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13693,7 +14442,7 @@ class table_fill(Node):
 
 def _try_table_fill(_text, _pos):
     # Begin Seq
-    start_pos137 = _pos
+    start_pos143 = _pos
     while True:
         # Begin Byte
         # 0xfc
@@ -13702,7 +14451,7 @@ def _try_table_fill(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1257
+            _result = _raise_error1309
             _status = False
         # End Byte
         if not (_status):
@@ -13715,7 +14464,7 @@ def _try_table_fill(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error1259
+            _result = _raise_error1311
             _status = False
         # End Byte
         if not (_status):
@@ -13728,12 +14477,12 @@ def _try_table_fill(_text, _pos):
             break
         table = _result
         _result = table_fill(table)
-        _result._metadata.position_info = (start_pos137, _pos)
+        _result._metadata.position_info = (start_pos143, _pos)
         break
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error1257(_text, _pos):
+def _raise_error1309(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -13749,7 +14498,7 @@ def _raise_error1257(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error1259(_text, _pos):
+def _raise_error1311(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
