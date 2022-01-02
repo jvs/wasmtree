@@ -33,9 +33,9 @@ def test_simple_module():
         parser.CodeEntry(
             locals=[],
             expression=[
-                parser.GetLocal(0),
-                parser.ConstI32(1),
-                parser.AddI32(),
+                parser.local_get(0),
+                parser.i32_const(1),
+                parser.i32_add(),
             ],
         ),
     ])

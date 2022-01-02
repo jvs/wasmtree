@@ -47,7 +47,7 @@ def test_code_section():
     expected = parser.CodeSection([
         parser.CodeEntry(
             locals=[],
-            expression=[parser.Nop(), parser.Nop()],
+            expression=[parser.nop(), parser.nop()],
         ),
     ])
     contents = Buffer().write_code_section(expected).getvalue()

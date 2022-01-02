@@ -411,31 +411,97 @@ class Locals {
 Expression => Instruction* << 0x0B
 
 Instruction = (
-    Unreachable
-    | Nop
-    | GetLocal
-    | ConstI32
-    | AddI32
+    unreachable
+    | nop
+    | local_get
+    | i32_const
+    | i64_const
+    | f32_const
+    | f64_const
+    | i32_eqz
+    | i32_eq
+    | i32_ne
+    | i32_lt_s
+    | i32_lt_u
+    | i32_gt_s
+    | i32_gt_u
+    | i32_le_s
+    | i32_le_u
+    | i32_ge_s
+    | i32_ge_u
+    | i64_eqz
+    | i64_eq
+    | i64_ne
+    | i64_lt_s
+    | i64_lt_u
+    | i64_gt_s
+    | i64_gt_u
+    | i64_le_s
+    | i64_le_u
+    | i64_ge_s
+    | i64_ge_u
+    | f32_eq
+    | f32_ne
+    | f32_lt
+    | f32_gt
+    | f32_le
+    | f32_ge
+    | f64_eq
+    | f64_ne
+    | f64_lt
+    | f64_gt
+    | f64_le
+    | f64_ge
+
+    | i32_add
 )
 
-class Unreachable {
-    let id: 0x00
-}
+class unreachable { let id: 0x00 }
+class nop { let id: 0x01 }
 
-class Nop {
-    let id: 0x01
-}
+class local_get { let id: 0x20; index: u32 }
 
-class GetLocal {
-    let id: 0x20
-    index: u32
-}
+class i32_const { let id: 0x41; number: i32 }
+class i64_const { let id: 0x42; number: i64 }
+class f32_const { let id: 0x43; number: f32 }
+class f64_const { let id: 0x44; number: f64 }
 
-class ConstI32 {
-    let id: 0x41
-    number: i32
-}
+class i32_eqz { let id: 0x45 }
+class i32_eq { let id: 0x46 }
+class i32_ne { let id: 0x47 }
+class i32_lt_s { let id: 0x48 }
+class i32_lt_u { let id: 0x49 }
+class i32_gt_s { let id: 0x4A }
+class i32_gt_u { let id: 0x4B }
+class i32_le_s { let id: 0x4C }
+class i32_le_u { let id: 0x4D }
+class i32_ge_s { let id: 0x4E }
+class i32_ge_u { let id: 0x4F }
 
-class AddI32 {
-    let id: 0x6A
-}
+class i64_eqz { let id: 0x50 }
+class i64_eq { let id: 0x51 }
+class i64_ne { let id: 0x52 }
+class i64_lt_s { let id: 0x53 }
+class i64_lt_u { let id: 0x54 }
+class i64_gt_s { let id: 0x55 }
+class i64_gt_u { let id: 0x56 }
+class i64_le_s { let id: 0x57 }
+class i64_le_u { let id: 0x58 }
+class i64_ge_s { let id: 0x59 }
+class i64_ge_u { let id: 0x5A }
+
+class f32_eq { let id: 0x5B }
+class f32_ne { let id: 0x5C }
+class f32_lt { let id: 0x5D }
+class f32_gt { let id: 0x5E }
+class f32_le { let id: 0x5F }
+class f32_ge { let id: 0x60 }
+
+class f64_eq { let id: 0x61 }
+class f64_ne { let id: 0x62 }
+class f64_lt { let id: 0x63 }
+class f64_gt { let id: 0x64 }
+class f64_le { let id: 0x65 }
+class f64_ge { let id: 0x66 }
+
+class i32_add { let id: 0x6A }

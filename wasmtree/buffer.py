@@ -243,6 +243,15 @@ class Buffer:
         elif instr_id == 0x41:
             self.write_i32(instr.number)
 
+        elif instr_id == 0x42:
+            self.write_i64(instr.number)
+
+        elif instr_id == 0x43:
+            self.write_f32(instr.number)
+
+        elif instr_id == 0x44:
+            self.write_f64(instr.number)
+
         return self
 
     def write_limits(self, limits):
