@@ -146,7 +146,7 @@ class Import {
 
 class ImportFunc {
     let id: 0x00
-    type_index: u32
+    type: u32
 }
 
 class ImportTable {
@@ -283,7 +283,6 @@ Limits = MinLimit | MinMaxLimits
 class MinLimit {
     let id: 0x00
     min: u32
-    max: `None`
 }
 
 class MinMaxLimits {

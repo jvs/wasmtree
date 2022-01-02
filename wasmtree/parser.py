@@ -149,7 +149,7 @@ class Import {
 
 class ImportFunc {
     let id: 0x00
-    type_index: u32
+    type: u32
 }
 
 class ImportTable {
@@ -286,7 +286,6 @@ Limits = MinLimit | MinMaxLimits
 class MinLimit {
     let id: 0x00
     min: u32
-    max: `None`
 }
 
 class MinMaxLimits {
@@ -2606,19 +2605,19 @@ class ImportFunc(Node):
     """
     class ImportFunc {
         let id: 0x0
-        type_index: u32
+        type: u32
     }
     """
-    _fields = ('type_index',)
+    _fields = ('type',)
 
     id = 0x0
 
-    def __init__(self, type_index):
+    def __init__(self, type):
         Node.__init__(self)
-        self.type_index = type_index
+        self.type = type
 
     def __repr__(self):
-        return f'ImportFunc(type_index={self.type_index!r})'
+        return f'ImportFunc(type={self.type!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -2647,8 +2646,8 @@ def _try_ImportFunc(_text, _pos):
         # End Ref
         if not (_status):
             break
-        type_index = _result
-        _result = ImportFunc(type_index)
+        type = _result
+        _result = ImportFunc(type)
         _result._metadata.position_info = (start_pos17, _pos)
         break
     # End Seq
@@ -4401,20 +4400,18 @@ class MinLimit(Node):
     class MinLimit {
         let id: 0x0
         min: u32
-        max: `None`
     }
     """
-    _fields = ('min', 'max')
+    _fields = ('min',)
 
     id = 0x0
 
-    def __init__(self, min, max):
+    def __init__(self, min):
         Node.__init__(self)
         self.min = min
-        self.max = max
 
     def __repr__(self):
-        return f'MinLimit(min={self.min!r}, max={self.max!r})'
+        return f'MinLimit(min={self.min!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -4444,10 +4441,7 @@ def _try_MinLimit(_text, _pos):
         if not (_status):
             break
         min = _result
-        _result = None
-        _status = True
-        max = _result
-        _result = MinLimit(min, max)
+        _result = MinLimit(min)
         _result._metadata.position_info = (start_pos37, _pos)
         break
     # End Seq
@@ -4505,7 +4499,7 @@ def _try_MinMaxLimits(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error439
+            _result = _raise_error437
             _status = False
         # End Byte
         if not (_status):
@@ -4529,7 +4523,7 @@ def _try_MinMaxLimits(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error439(_text, _pos):
+def _raise_error437(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4581,7 +4575,7 @@ def _try_FuncType(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error447
+            _result = _raise_error445
             _status = False
         # End Byte
         if not (_status):
@@ -4609,7 +4603,7 @@ def _try_FuncType(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error447(_text, _pos):
+def _raise_error445(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4658,7 +4652,7 @@ def _try_GlobalType(_text, _pos):
             break
         type = _result
         # Begin Choice
-        farthest_err6 = _raise_error461
+        farthest_err6 = _raise_error459
         backtrack19 = farthest_pos6 = _pos
         while True:
             # Option 1:
@@ -4672,7 +4666,7 @@ def _try_GlobalType(_text, _pos):
                     _pos = (_pos + 1)
                     _status = True
                 else:
-                    _result = _raise_error463
+                    _result = _raise_error461
                     _status = False
                 # End Byte
                 if not (_status):
@@ -4698,7 +4692,7 @@ def _try_GlobalType(_text, _pos):
                     _pos = (_pos + 1)
                     _status = True
                 else:
-                    _result = _raise_error466
+                    _result = _raise_error464
                     _status = False
                 # End Byte
                 if not (_status):
@@ -4725,7 +4719,7 @@ def _try_GlobalType(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error461(_text, _pos):
+def _raise_error459(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4741,7 +4735,7 @@ def _raise_error461(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error463(_text, _pos):
+def _raise_error461(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4757,7 +4751,7 @@ def _raise_error463(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error466(_text, _pos):
+def _raise_error464(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4812,7 +4806,7 @@ def _try_MemoryType(_text, _pos):
 def _try_NumberType(_text, _pos):
     # Rule 'NumberType'
     # Begin Choice
-    farthest_err7 = _raise_error473
+    farthest_err7 = _raise_error471
     backtrack20 = farthest_pos7 = _pos
     while True:
         # Option 1:
@@ -4826,7 +4820,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error475
+                _result = _raise_error473
                 _status = False
             # End Byte
             if not (_status):
@@ -4852,7 +4846,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error478
+                _result = _raise_error476
                 _status = False
             # End Byte
             if not (_status):
@@ -4878,7 +4872,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error481
+                _result = _raise_error479
                 _status = False
             # End Byte
             if not (_status):
@@ -4904,7 +4898,7 @@ def _try_NumberType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error484
+                _result = _raise_error482
                 _status = False
             # End Byte
             if not (_status):
@@ -4930,7 +4924,7 @@ def _parse_NumberType(text, pos=0, fullparse=True):
 NumberType = Rule('NumberType', _parse_NumberType, """
     NumberType = 0x7f >> `'i32'` | 0x7e >> `'i64'` | 0x7d >> `'f32'` | 0x7c >> `'f64'`
 """)
-def _raise_error473(_text, _pos):
+def _raise_error471(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4946,7 +4940,7 @@ def _raise_error473(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error475(_text, _pos):
+def _raise_error473(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4962,7 +4956,7 @@ def _raise_error475(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error478(_text, _pos):
+def _raise_error476(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4978,7 +4972,7 @@ def _raise_error478(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error481(_text, _pos):
+def _raise_error479(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -4994,7 +4988,7 @@ def _raise_error481(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error484(_text, _pos):
+def _raise_error482(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5057,7 +5051,7 @@ def _try_TableType(_text, _pos):
 def _try_ReferenceType(_text, _pos):
     # Rule 'ReferenceType'
     # Begin Choice
-    farthest_err8 = _raise_error493
+    farthest_err8 = _raise_error491
     backtrack21 = farthest_pos8 = _pos
     while True:
         # Option 1:
@@ -5071,7 +5065,7 @@ def _try_ReferenceType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error495
+                _result = _raise_error493
                 _status = False
             # End Byte
             if not (_status):
@@ -5097,7 +5091,7 @@ def _try_ReferenceType(_text, _pos):
                 _pos = (_pos + 1)
                 _status = True
             else:
-                _result = _raise_error498
+                _result = _raise_error496
                 _status = False
             # End Byte
             if not (_status):
@@ -5123,7 +5117,7 @@ def _parse_ReferenceType(text, pos=0, fullparse=True):
 ReferenceType = Rule('ReferenceType', _parse_ReferenceType, """
     ReferenceType = 0x70 >> `'funcref'` | 0x6f >> `'externref'`
 """)
-def _raise_error493(_text, _pos):
+def _raise_error491(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5139,7 +5133,7 @@ def _raise_error493(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error495(_text, _pos):
+def _raise_error493(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5155,7 +5149,7 @@ def _raise_error495(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-def _raise_error498(_text, _pos):
+def _raise_error496(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5174,7 +5168,7 @@ def _raise_error498(_text, _pos):
 def _try_ValueType(_text, _pos):
     # Rule 'ValueType'
     # Begin Choice
-    farthest_err9 = _raise_error501
+    farthest_err9 = _raise_error499
     backtrack22 = farthest_pos9 = _pos
     while True:
         # Option 1:
@@ -5208,7 +5202,7 @@ def _parse_ValueType(text, pos=0, fullparse=True):
 ValueType = Rule('ValueType', _parse_ValueType, """
     ValueType = NumberType | ReferenceType
 """)
-def _raise_error501(_text, _pos):
+def _raise_error499(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5331,7 +5325,7 @@ def _try_bytechar(_text, _pos):
         _pos = match1.end()
         _status = True
     else:
-        _result = _raise_error521
+        _result = _raise_error519
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -5342,7 +5336,7 @@ def _parse_bytechar(text, pos=0, fullparse=True):
 bytechar = Rule('bytechar', _parse_bytechar, """
     bytechar = /[\\x00-\\xFF]/
 """)
-def _raise_error521(_text, _pos):
+def _raise_error519(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5439,7 +5433,7 @@ def _try_byte(_text, _pos):
         _pos = match2.end()
         _status = True
     else:
-        _result = _raise_error538
+        _result = _raise_error536
         _status = False
     # End Regex
     if _status:
@@ -5456,7 +5450,7 @@ def _parse_byte(text, pos=0, fullparse=True):
 byte = Rule('byte', _parse_byte, """
     byte = /[\\x00-\\xFF]/ |> `ord`
 """)
-def _raise_error538(_text, _pos):
+def _raise_error536(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5523,7 +5517,7 @@ def _try_f32(_text, _pos):
         _pos = match3.end()
         _status = True
     else:
-        _result = _raise_error548
+        _result = _raise_error546
         _status = False
     # End Regex
     if _status:
@@ -5540,7 +5534,7 @@ def _parse_f32(text, pos=0, fullparse=True):
 f32 = Rule('f32', _parse_f32, """
     f32 = /[\\x00-\\xFF]{4}/ |> `lambda x: struct.unpack('<f', x)[0]`
 """)
-def _raise_error548(_text, _pos):
+def _raise_error546(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5568,7 +5562,7 @@ def _try_f64(_text, _pos):
         _pos = match4.end()
         _status = True
     else:
-        _result = _raise_error552
+        _result = _raise_error550
         _status = False
     # End Regex
     if _status:
@@ -5585,7 +5579,7 @@ def _parse_f64(text, pos=0, fullparse=True):
 f64 = Rule('f64', _parse_f64, """
     f64 = /[\\x00-\\xFF]{8}/ |> `lambda x: struct.unpack('<d', x)[0]`
 """)
-def _raise_error552(_text, _pos):
+def _raise_error550(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5653,7 +5647,7 @@ def _try_LEB128(_text, _pos):
         _pos = match5.end()
         _status = True
     else:
-        _result = _raise_error563
+        _result = _raise_error561
         _status = False
     # End Regex
     yield (_status, _result, _pos)
@@ -5664,7 +5658,7 @@ def _parse_LEB128(text, pos=0, fullparse=True):
 LEB128 = Rule('LEB128', _parse_LEB128, """
     LEB128 = /[\\x80-\\xFF]*[\\x00-\\x7F]/
 """)
-def _raise_error563(_text, _pos):
+def _raise_error561(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5805,7 +5799,7 @@ def _try_Expression(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error584
+            _result = _raise_error582
             _status = False
         # End Byte
         if _status:
@@ -5820,7 +5814,7 @@ def _parse_Expression(text, pos=0, fullparse=True):
 Expression = Rule('Expression', _parse_Expression, """
     Expression = Instruction* << 0xb
 """)
-def _raise_error584(_text, _pos):
+def _raise_error582(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5839,7 +5833,7 @@ def _raise_error584(_text, _pos):
 def _try_Instruction(_text, _pos):
     # Rule 'Instruction'
     # Begin Choice
-    farthest_err10 = _raise_error586
+    farthest_err10 = _raise_error584
     backtrack23 = farthest_pos10 = _pos
     while True:
         # Option 1:
@@ -5903,7 +5897,7 @@ def _parse_Instruction(text, pos=0, fullparse=True):
 Instruction = Rule('Instruction', _parse_Instruction, """
     Instruction = Unreachable | Nop | GetLocal | ConstI32 | AddI32
 """)
-def _raise_error586(_text, _pos):
+def _raise_error584(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -5951,7 +5945,7 @@ def _try_Unreachable(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error595
+            _result = _raise_error593
             _status = False
         # End Byte
         if not (_status):
@@ -5963,7 +5957,7 @@ def _try_Unreachable(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error595(_text, _pos):
+def _raise_error593(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -6011,7 +6005,7 @@ def _try_Nop(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error599
+            _result = _raise_error597
             _status = False
         # End Byte
         if not (_status):
@@ -6023,7 +6017,7 @@ def _try_Nop(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error599(_text, _pos):
+def _raise_error597(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -6073,7 +6067,7 @@ def _try_GetLocal(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error603
+            _result = _raise_error601
             _status = False
         # End Byte
         if not (_status):
@@ -6091,7 +6085,7 @@ def _try_GetLocal(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error603(_text, _pos):
+def _raise_error601(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -6141,7 +6135,7 @@ def _try_ConstI32(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error609
+            _result = _raise_error607
             _status = False
         # End Byte
         if not (_status):
@@ -6159,7 +6153,7 @@ def _try_ConstI32(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error609(_text, _pos):
+def _raise_error607(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
@@ -6207,7 +6201,7 @@ def _try_AddI32(_text, _pos):
             _pos = (_pos + 1)
             _status = True
         else:
-            _result = _raise_error615
+            _result = _raise_error613
             _status = False
         # End Byte
         if not (_status):
@@ -6219,7 +6213,7 @@ def _try_AddI32(_text, _pos):
     # End Seq
     yield (_status, _result, _pos)
 
-def _raise_error615(_text, _pos):
+def _raise_error613(_text, _pos):
     if (len(_text) <= _pos):
         title = 'Unexpected end of input.'
         line = None
