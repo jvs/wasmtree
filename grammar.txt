@@ -413,6 +413,29 @@ Instruction = (
     | global_set
     | table_get
     | table_set
+    | i32_load
+    | i64_load
+    | f32_load
+    | f64_load
+    | i32_load8_s
+    | i32_load8_u
+    | i32_load16_s
+    | i32_load16_u
+    | i64_load8_s
+    | i64_load8_u
+    | i64_load16_s
+    | i64_load16_u
+    | i64_load32_s
+    | i64_load32_u
+    | i32_store
+    | i64_store
+    | f32_store
+    | f64_store
+    | i32_store8
+    | i32_store16
+    | i64_store8
+    | i64_store16
+    | i64_store32
     | i32_const
     | i64_const
     | f32_const
@@ -531,6 +554,30 @@ class global_set { let id: 0x24; index: GlobalIndex }
 
 class table_get { let id: 0x25; index: TableIndex }
 class table_set { let id: 0x26; index: TableIndex }
+
+class i32_load { let id: 0x28; align: u32; offset: u32 }
+class i64_load { let id: 0x29; align: u32; offset: u32 }
+class f32_load { let id: 0x2A; align: u32; offset: u32 }
+class f64_load { let id: 0x2B; align: u32; offset: u32 }
+class i32_load8_s { let id: 0x2C; align: u32; offset: u32 }
+class i32_load8_u { let id: 0x2D; align: u32; offset: u32 }
+class i32_load16_s { let id: 0x2E; align: u32; offset: u32 }
+class i32_load16_u { let id: 0x2F; align: u32; offset: u32 }
+class i64_load8_s { let id: 0x30; align: u32; offset: u32 }
+class i64_load8_u { let id: 0x31; align: u32; offset: u32 }
+class i64_load16_s { let id: 0x32; align: u32; offset: u32 }
+class i64_load16_u { let id: 0x33; align: u32; offset: u32 }
+class i64_load32_s { let id: 0x34; align: u32; offset: u32 }
+class i64_load32_u { let id: 0x35; align: u32; offset: u32 }
+class i32_store { let id: 0x36; align: u32; offset: u32 }
+class i64_store { let id: 0x37; align: u32; offset: u32 }
+class f32_store { let id: 0x38; align: u32; offset: u32 }
+class f64_store { let id: 0x39; align: u32; offset: u32 }
+class i32_store8 { let id: 0x3A; align: u32; offset: u32 }
+class i32_store16 { let id: 0x3B; align: u32; offset: u32 }
+class i64_store8 { let id: 0x3C; align: u32; offset: u32 }
+class i64_store16 { let id: 0x3D; align: u32; offset: u32 }
+class i64_store32 { let id: 0x3E; align: u32; offset: u32 }
 
 class i32_const { let id: 0x41; number: i32 }
 class i64_const { let id: 0x42; number: i64 }

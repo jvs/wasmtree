@@ -288,6 +288,10 @@ class Buffer:
         elif 0x20 <= instr_id <= 0x26:
             self.write_u32(instr.index)
 
+        elif 0x28 <= instr.id <= 0x3E:
+            self.write_u32(instr.align)
+            self.write_u32(inst.offset)
+
         elif instr_id == 0x41:
             self.write_i32(instr.number)
 
