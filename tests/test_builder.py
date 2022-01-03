@@ -27,12 +27,12 @@ def test_simple_module():
         ],
         export_as='add_one',
     )
-
     builder.add_custom_section(
         name=expected_module.custom12[0].name,
         body=expected_module.custom12[0].body,
     )
-    module = builder.build_module()
+
+    module = builder.build_module_tree()
 
     assert module.type_section == parser.TypeSection([
         parser.FunctionType(['i32'], ['i32']),

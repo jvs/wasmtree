@@ -1,6 +1,6 @@
 import itertools
 
-from . import parser
+from . import buffer, parser
 
 
 class Builder:
@@ -70,7 +70,7 @@ class Builder:
             parameter_types,
             result_types,
             local_types,
-            expression,
+            expression=None,
             export_as=None,
             add_to_table=False,
             is_start_function=False,
@@ -86,6 +86,9 @@ class Builder:
                 locals[-1].count += 1
             else:
                 locals.append(parser.Locals(count=1, type=t))
+
+        if expression is None:
+            expression = []
 
         expression = self.expression(expression)
         entry = parser.CodeEntry(locals, expression)
@@ -154,6 +157,10 @@ class Builder:
         return table_index
 
     def build_module(self):
+        module = self.build_module_tree()
+        return buffer.Buffer().write_module(module).getvalue()
+
+    def build_module_tree(self):
         return parser.Module(
             type_section=parser.TypeSection(self.function_types),
             import_section=parser.ImportSection(self.imports),
@@ -353,6 +360,17 @@ class Builder:
                 f'Expected one of {expected!r}. Received: {reference_type!r}'
             )
         return reference_type
+
+    def set_function_body(self, function_index, expression):
+        if not (0 <= function_index < len(self.function_bodies)):
+            raise ValueError(
+                f'function_index out of range [0, {len(self.function_bodies)}).'
+            )
+
+        entry = self.function_bodies[function_index]
+        was = entry.expression
+        entry.expression = self.expression(expression)
+        return was
 
     def table_type(self, reference_type, limits):
         reference_type = self.reference_type(reference_type)
