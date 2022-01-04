@@ -111,6 +111,9 @@ class Builder:
         return (function_index, element_index)
 
     def add_function_element(self, function_index):
+        if not self.tables:
+            self.add_table('funcref', limits=(0,))
+
         element_index = len(self.function_element_indexes)
         self.function_element_indexes.append(function_index)
         return element_index
@@ -323,7 +326,7 @@ class Builder:
                 f'Expected list or tuple of one or two elements. Received {len(limits)}.'
             )
 
-        if not isinstance(limits, (parser.MinLimit, MinMaxLimits)):
+        if not isinstance(limits, (parser.MinLimit, parser.MinMaxLimits)):
             raise TypeError(
                 'Expected list, tuple, MinLimit, or MinMaxLimit object.'
                 f' Received: {type(limits)}.'
