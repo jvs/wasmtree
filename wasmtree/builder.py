@@ -112,7 +112,9 @@ class Builder:
 
     def add_function_element(self, function_index):
         if not self.tables:
-            self.add_table('funcref', limits=(0,))
+            self.add_table('funcref', limits=[1])
+        else:
+            self.tables[0].limits[0] += 1
 
         element_index = len(self.function_element_indexes)
         self.function_element_indexes.append(function_index)
