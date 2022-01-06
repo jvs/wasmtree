@@ -611,7 +611,7 @@ class Loop {
 class If {
     let id: 0x04
     type: BlockType
-    true_case: Instruction* << Peek(0x05 | 0x0B)
+    true_case: Instruction* << Expect(0x05 | 0x0B)
     else_case: Opt(0x05 >> Instruction*) << 0x0B
 }
 
@@ -8790,7 +8790,7 @@ class If(Node):
     class If {
         let id: 0x4
         type: BlockType
-        true_case: Instruction* << Peek(0x5 | 0xb)
+        true_case: Instruction* << Expect(0x5 | 0xb)
         else_case: Opt(0x5 >> Instruction*) << 0xb
     }
     """
@@ -8836,7 +8836,7 @@ def _try_If(_text, _pos):
             break
         type = _result
         # Begin Discard
-        # Instruction* << Peek(0x5 | 0xb)
+        # Instruction* << Expect(0x5 | 0xb)
         while True:
             # Begin List
             # Instruction*
@@ -8854,8 +8854,8 @@ def _try_If(_text, _pos):
             _status = True
             # End List
             staging19 = _result
-            # Begin Peek
-            # Peek(0x5 | 0xb)
+            # Begin Expect
+            # Expect(0x5 | 0xb)
             backtrack25 = _pos
             # Begin Choice
             farthest_err12 = _raise_error844
@@ -8893,7 +8893,7 @@ def _try_If(_text, _pos):
             # End Choice
             if _status:
                 _pos = backtrack25
-            # End Peek
+            # End Expect
             if _status:
                 _result = staging19
             break
