@@ -290,7 +290,7 @@ class Buffer:
 
         elif 0x28 <= instr.id <= 0x3E:
             self.write_u32(instr.align)
-            self.write_u32(inst.offset)
+            self.write_u32(instr.offset)
 
         elif instr.id == 0x3F or instr.id == 0x40:
             self.write_byte(instr.zero)
