@@ -293,7 +293,11 @@ class Builder:
             raise TypeError(f'Unknown instruction: {instruction!r}.')
 
         cls = getattr(parser, class_name)
-        return cls(*args)
+
+        def conv(x):
+            return [self.instruction(i) for i in x] if isinstance(x, list) else x
+
+        return cls(*[conv(arg) for arg in args])
 
     def import_descriptor(self, module, name, descriptor):
         self.imports.append(parser.Import(module, name, descriptor))
