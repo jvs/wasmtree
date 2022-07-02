@@ -612,7 +612,7 @@ class If {
     let id: 0x04
     type: BlockType
     true_case: Instruction* << Expect(0x05 | 0x0B)
-    else_case: Opt(0x05 >> Instruction*) << 0x0B
+    false_case: Opt(0x05 >> Instruction*) << 0x0B
 }
 
 class br {
@@ -8791,21 +8791,21 @@ class If(Node):
         let id: 0x4
         type: BlockType
         true_case: Instruction* << Expect(0x5 | 0xb)
-        else_case: Opt(0x5 >> Instruction*) << 0xb
+        false_case: Opt(0x5 >> Instruction*) << 0xb
     }
     """
-    _fields = ('type', 'true_case', 'else_case')
+    _fields = ('type', 'true_case', 'false_case')
 
     id = 0x4
 
-    def __init__(self, type, true_case, else_case):
+    def __init__(self, type, true_case, false_case):
         Node.__init__(self)
         self.type = type
         self.true_case = true_case
-        self.else_case = else_case
+        self.false_case = false_case
 
     def __repr__(self):
-        return f'If(type={self.type!r}, true_case={self.true_case!r}, else_case={self.else_case!r})'
+        return f'If(type={self.type!r}, true_case={self.true_case!r}, false_case={self.false_case!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
@@ -8961,8 +8961,8 @@ def _try_If(_text, _pos):
         # End Discard
         if not (_status):
             break
-        else_case = _result
-        _result = If(type, true_case, else_case)
+        false_case = _result
+        _result = If(type, true_case, false_case)
         _result._metadata.position_info = (start_pos50, _pos)
         break
     # End Seq

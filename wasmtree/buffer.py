@@ -252,13 +252,13 @@ class Buffer:
 
         elif instr_id == 0x04:
             self.write_block_type(instr.type)
-            if instr.else_case is None:
+            if instr.false_case is None:
                 self.write_expression(instr.true_case)
             else:
                 for child in instr.true_case:
                     self.write_instruction(child)
                 self.write_byte(0x05)
-                self.write_expression(instr.else_case)
+                self.write_expression(instr.false_case)
 
         elif instr_id == 0x0C or instr_id == 0x0D:
             self.write_u32(instr.label)

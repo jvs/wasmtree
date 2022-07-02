@@ -609,7 +609,7 @@ class If {
     let id: 0x04
     type: BlockType
     true_case: Instruction* << Expect(0x05 | 0x0B)
-    else_case: Opt(0x05 >> Instruction*) << 0x0B
+    false_case: Opt(0x05 >> Instruction*) << 0x0B
 }
 
 class br {
