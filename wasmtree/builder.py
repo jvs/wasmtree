@@ -1,6 +1,6 @@
 import itertools
 
-from . import buffer, parser
+from . import buffer, optimizer, parser
 
 
 class Builder:
@@ -361,6 +361,10 @@ class Builder:
 
     def memory_type(self, limits):
         return parser.MemoryType(self.limits(limits))
+
+    def optimize(self):
+        for entry in self.function_bodies:
+            entry.expression = optimizer.run(entry.expression)
 
     def reference_type(self, reference_type):
         expected = self.reference_types
