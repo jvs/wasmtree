@@ -1113,10 +1113,10 @@ def visit(node):
         node = stack.pop()
 
         if isinstance(node, (list, tuple)):
-            stack.extend(node)
+            stack.extend(reversed(node))
 
         elif isinstance(node, dict):
-            stack.extend(node.values())
+            stack.extend(reversed(node.values()))
 
         elif isinstance(node, Node):
             node_id = id(node)
@@ -1127,7 +1127,7 @@ def visit(node):
             yield node
 
             if hasattr(node, '_fields'):
-                stack.extend(getattr(node, x) for x in node._fields)
+                stack.extend(getattr(node, x) for x in reversed(node._fields))
 
 
 _Traversing = _nt('_Traversing', 'parent, field, child, is_finished')
@@ -1184,13 +1184,20 @@ def transform(node, *callbacks):
     if not callbacks:
         return node
 
-    if len(callbacks) == 1:
-        callback = callbacks[0]
-    else:
-        def callback(node):
-            for f in callbacks:
-                node = f(node)
-            return node
+    def callback(node):
+        for f in callbacks:
+            prev = node
+            node = f(prev)
+
+            if node is not prev:
+                if (
+                    isinstance(prev, Node)
+                    and isinstance(node, Node)
+                    and not node._metadata
+                ):
+                    node._metadata.update(prev._metadata)
+
+        return node
 
     return _transform(node, callback)
 
@@ -1208,8 +1215,6 @@ def _transform(node, callback):
         now = _transform(was, callback)
         if now is not was:
             updates[field] = now
-            if isinstance(was, Node) and isinstance(now, Node) and not now._metadata:
-                now._metadata.update(was._metadata)
 
     if updates:
         node = node._replace(**updates)
