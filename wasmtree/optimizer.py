@@ -22,6 +22,14 @@ def run(instructions):
             result.append(parser.local_tee(instruction.index))
             continue
 
+        # Replace [bool-op, eqz] with [reverse-bool-op].
+        if isinstance(instruction, parser.i32_eqz) and result:
+            reverse_op = _reverse_boolean_operator(result[-1])
+            if reverse_op is not None:
+                result.pop()
+                result.append(reverse_op)
+                continue
+
         # Precompute some constant values.
         if (
             _is_binary_operator(instruction)
@@ -153,3 +161,15 @@ def _within_bounds(type_name, number):
     if type_name == 'i64':
         return 0 <= number <= (2 ** 60)
     return False
+
+
+def _reverse_boolean_operator(instruction):
+    # For now, just handle a few integer operations.
+    reverse_ops = {
+        parser.i32_eq: parser.i32_ne,
+        parser.i32_ne: parser.i32_eq,
+        parser.i64_eq: parser.i64_ne,
+        parser.i64_ne: parser.i64_eq,
+    }
+    cls = reverse_ops.get(type(instruction))
+    return None if cls is None else cls()
