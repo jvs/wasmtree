@@ -176,7 +176,7 @@ class Buffer:
 
     def write_global(self, glob):
         self.write_global_type(glob.type)
-        self.write_expression(glob.expression)
+        self.write_expression(glob.initializer)
         return self
 
     def write_global_section(self, global_section):
