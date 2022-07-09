@@ -184,7 +184,7 @@ class Buffer:
             stage = Buffer()
             stage.write_u32(len(global_section.globals))
             for glob in global_section.globals:
-                self.write_global(glob)
+                stage.write_global(glob)
             self._write_staged_section(global_section.id, stage)
         return self
 
