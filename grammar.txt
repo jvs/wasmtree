@@ -126,7 +126,7 @@ class CodeSection {
 class DataSection {
     let id: 0x0B
     let size: u32
-    segments: vec(DefaultDataSegment | PassiveDataSegment | ActiveDataSegment)
+    segments: vec(ActiveDataSegment | PassiveDataSegment | ActiveIndexDataSegment)
 }
 
 
@@ -228,7 +228,7 @@ class DeclarativeExpressionSegment {
 
 
 # Data segments.
-class DefaultDataSegment {
+class ActiveDataSegment {
     let id: 0x00
     offset: Expression
     contents: ByteVector
@@ -239,7 +239,7 @@ class PassiveDataSegment {
     contents: ByteVector
 }
 
-class ActiveDataSegment {
+class ActiveIndexDataSegment {
     let id: 0x02
     index: MemoryIndex
     offset: Expression

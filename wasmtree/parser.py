@@ -129,7 +129,7 @@ class CodeSection {
 class DataSection {
     let id: 0x0B
     let size: u32
-    segments: vec(DefaultDataSegment | PassiveDataSegment | ActiveDataSegment)
+    segments: vec(ActiveDataSegment | PassiveDataSegment | ActiveIndexDataSegment)
 }
 
 
@@ -231,7 +231,7 @@ class DeclarativeExpressionSegment {
 
 
 # Data segments.
-class DefaultDataSegment {
+class ActiveDataSegment {
     let id: 0x00
     offset: Expression
     contents: ByteVector
@@ -242,7 +242,7 @@ class PassiveDataSegment {
     contents: ByteVector
 }
 
-class ActiveDataSegment {
+class ActiveIndexDataSegment {
     let id: 0x02
     index: MemoryIndex
     offset: Expression
@@ -2770,7 +2770,7 @@ class DataSection(Node):
     class DataSection {
         let id: 0xb
         let size: u32
-        segments: vec(DefaultDataSegment | PassiveDataSegment | ActiveDataSegment)
+        segments: vec(ActiveDataSegment | PassiveDataSegment | ActiveIndexDataSegment)
     }
     """
     _fields = ('segments',)
@@ -2796,7 +2796,7 @@ def _parse_function_216(_text, _pos):
     while True:
         # Option 1:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_DefaultDataSegment, _pos))
+        (_status, _result, _pos) = (yield (3, _try_ActiveDataSegment, _pos))
         # End Ref
         if _status:
             break
@@ -2816,7 +2816,7 @@ def _parse_function_216(_text, _pos):
         _pos = backtrack14
         # Option 3:
         # Begin Ref
-        (_status, _result, _pos) = (yield (3, _try_ActiveDataSegment, _pos))
+        (_status, _result, _pos) = (yield (3, _try_ActiveIndexDataSegment, _pos))
         # End Ref
         if _status:
             break
@@ -2853,7 +2853,7 @@ def _try_DataSection(_text, _pos):
             break
         size = _result
         # Begin Call
-        # vec(DefaultDataSegment | PassiveDataSegment | ActiveDataSegment)
+        # vec(ActiveDataSegment | PassiveDataSegment | ActiveIndexDataSegment)
         func11 = _ParseFunction(_try_vec, (_parse_function_216,), ())
         (_status, _result, _pos) = (yield (3, func11, _pos))
         # End Call
@@ -2893,7 +2893,7 @@ def _raise_error216(_text, _pos):
         title = f'Error on line {line}, column {col}:\n{excerpt}\n'
     details = (
     "Failed to parse the 'DataSection' rule, at the expression:\n"
-    '    DefaultDataSegment | PassiveDataSegment | ActiveDataSegment\n\n'
+    '    ActiveDataSegment | PassiveDataSegment | ActiveIndexDataSegment\n\n'
     'Unexpected input'
     )
     raise ParseError((title + details), _pos, line, col)
@@ -4567,9 +4567,9 @@ def _raise_error393(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-class DefaultDataSegment(Node):
+class ActiveDataSegment(Node):
     """
-    class DefaultDataSegment {
+    class ActiveDataSegment {
         let id: 0x0
         offset: Expression
         contents: ByteVector
@@ -4585,14 +4585,14 @@ class DefaultDataSegment(Node):
         self.contents = contents
 
     def __repr__(self):
-        return f'DefaultDataSegment(offset={self.offset!r}, contents={self.contents!r})'
+        return f'ActiveDataSegment(offset={self.offset!r}, contents={self.contents!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
-        return _run(text, pos, _try_DefaultDataSegment, fullparse)
+        return _run(text, pos, _try_ActiveDataSegment, fullparse)
 
 
-def _try_DefaultDataSegment(_text, _pos):
+def _try_ActiveDataSegment(_text, _pos):
     # Begin Seq
     start_pos34 = _pos
     while True:
@@ -4621,7 +4621,7 @@ def _try_DefaultDataSegment(_text, _pos):
         if not (_status):
             break
         contents = _result
-        _result = DefaultDataSegment(offset, contents)
+        _result = ActiveDataSegment(offset, contents)
         _result._metadata.position_info = (start_pos34, _pos)
         break
     # End Seq
@@ -4637,7 +4637,7 @@ def _raise_error403(_text, _pos):
         excerpt = _extract_excerpt(_text, _pos, col)
         title = f'Error on line {line}, column {col}:\n{excerpt}\n'
     details = (
-    "Failed to parse the 'DefaultDataSegment' rule, at the expression:\n"
+    "Failed to parse the 'ActiveDataSegment' rule, at the expression:\n"
     '    0x0\n\n'
     'Expected to match the byte value 0x0'
     )
@@ -4711,9 +4711,9 @@ def _raise_error411(_text, _pos):
     )
     raise ParseError((title + details), _pos, line, col)
 
-class ActiveDataSegment(Node):
+class ActiveIndexDataSegment(Node):
     """
-    class ActiveDataSegment {
+    class ActiveIndexDataSegment {
         let id: 0x2
         index: MemoryIndex
         offset: Expression
@@ -4731,14 +4731,14 @@ class ActiveDataSegment(Node):
         self.contents = contents
 
     def __repr__(self):
-        return f'ActiveDataSegment(index={self.index!r}, offset={self.offset!r}, contents={self.contents!r})'
+        return f'ActiveIndexDataSegment(index={self.index!r}, offset={self.offset!r}, contents={self.contents!r})'
 
     @staticmethod
     def parse(text, pos=0, fullparse=True):
-        return _run(text, pos, _try_ActiveDataSegment, fullparse)
+        return _run(text, pos, _try_ActiveIndexDataSegment, fullparse)
 
 
-def _try_ActiveDataSegment(_text, _pos):
+def _try_ActiveIndexDataSegment(_text, _pos):
     # Begin Seq
     start_pos36 = _pos
     while True:
@@ -4773,7 +4773,7 @@ def _try_ActiveDataSegment(_text, _pos):
         if not (_status):
             break
         contents = _result
-        _result = ActiveDataSegment(index, offset, contents)
+        _result = ActiveIndexDataSegment(index, offset, contents)
         _result._metadata.position_info = (start_pos36, _pos)
         break
     # End Seq
@@ -4789,7 +4789,7 @@ def _raise_error417(_text, _pos):
         excerpt = _extract_excerpt(_text, _pos, col)
         title = f'Error on line {line}, column {col}:\n{excerpt}\n'
     details = (
-    "Failed to parse the 'ActiveDataSegment' rule, at the expression:\n"
+    "Failed to parse the 'ActiveIndexDataSegment' rule, at the expression:\n"
     '    0x2\n\n'
     'Expected to match the byte value 0x2'
     )

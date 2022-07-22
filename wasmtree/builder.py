@@ -24,6 +24,15 @@ class Builder:
         self.function_element_indexes = []
         self.data_segments = []
 
+    def add_active_data_segment(self, offset, bytestr):
+        if not isinstance(bytestr, bytes):
+            raise TypeError(
+                'Data segment must be a bytes ojecct.'
+                f' Received: {type(bytestr)}.'
+            )
+
+        self.data_segments.append(parser.ActiveDataSegment(offset, bytestr))
+
     def add_block_type(self, block_type):
         if isinstance(block_type, str):
             if block_type == 'empty' or block_type in self.value_types:
@@ -55,15 +64,6 @@ class Builder:
             else self.leading_custom_sections)
 
         dst.append(parser.CustomSection(name=name, body=body))
-
-    def add_data_segment(self, offset, bytestr):
-        if not isinstance(bytestr, bytes):
-            raise TypeError(
-                'Data segment must be a bytes ojecct.'
-                f' Received: {type(bytestr)}.'
-            )
-
-        self.data_segments.append(parser.DefaultDataSegment(offset, bytestr))
 
     def add_function(
             self,
@@ -149,6 +149,17 @@ class Builder:
             self.export_memory(export_as, memory_index)
 
         return memory_index
+
+    def add_passive_data_segment(self, bytestr):
+        if not isinstance(bytestr, bytes):
+            raise TypeError(
+                'Data segment must be a bytes ojecct.'
+                f' Received: {type(bytestr)}.'
+            )
+
+        result = len(self.data_segments)
+        self.data_segments.append(parser.PassiveDataSegment(bytestr))
+        return result
 
     def add_table(self, reference_type, limits, export_as=None):
         export_as = self._export_as(export_as)
