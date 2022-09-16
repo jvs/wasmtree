@@ -901,14 +901,29 @@ class Node:
 
     def __init__(self):
         self._metadata = _Metadata()
+        self._hash = None
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, self.__class__):
             return False
         for field in self._fields:
-            if getattr(self, field) != getattr(other, field):
+            left = getattr(self, field)
+            right = getattr(other, field)
+            if left is not right and left != right:
                 return False
         return True
+
+    def __hash__(self):
+        if self._hash is not None:
+            return self._hash
+        self._hash = 0
+        result = 0
+        for field in self._fields:
+            result ^= _hash(getattr(self, field))
+        self._hash = result
+        return result
 
     def _asdict(self):
         return {k: getattr(self, k) for k in self._fields}
@@ -920,6 +935,24 @@ class Node:
         result = self.__class__(**kw)
         result._metadata.update(self._metadata)
         return result
+
+
+def _hash(value):
+    try:
+        return hash(value)
+    except TypeError:
+        if isinstance(value, (tuple, list)):
+            result = 0
+            for item in value:
+                result ^= _hash(item)
+            return result
+        elif isinstance(value, dict):
+            result = 0
+            for pair in value.items():
+                result ^= _hash(pair)
+            return result
+        else:
+            raise
 
 
 class _Metadata:
@@ -985,17 +1018,17 @@ def decode_unsigned_int(bytes):
     return result
 
 
-class SourcerError(Exception):
+class InputError(Exception):
     """Common superclass for ParseError and PartialParseError."""
 
 
-class ParseError(SourcerError):
+class ParseError(InputError):
     def __init__(self, message, index, line, column):
         super().__init__(message)
         self.position = _Position(index, line, column)
 
 
-class PartialParseError(SourcerError):
+class PartialParseError(InputError):
     def __init__(self, partial_result, last_position, excerpt):
         super().__init__('Incomplete parse. Unexpected input on line'
             f' {last_position.line}, column {last_position.column}:\n{excerpt}')
